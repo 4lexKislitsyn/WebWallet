@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29926.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebWallet.DB", "src\WebWallet.DB\WebWallet.DB.csproj", "{F4B05D9C-AC1F-4717-AA03-6E6D5D2CE5E8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebWallet.API", "src\WebWallet.API\WebWallet.API.csproj", "{21DEF8E0-A46D-4F1A-9A3A-7A1136CC84A8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F4B05D9C-AC1F-4717-AA03-6E6D5D2CE5E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4B05D9C-AC1F-4717-AA03-6E6D5D2CE5E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4B05D9C-AC1F-4717-AA03-6E6D5D2CE5E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4B05D9C-AC1F-4717-AA03-6E6D5D2CE5E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21DEF8E0-A46D-4F1A-9A3A-7A1136CC84A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21DEF8E0-A46D-4F1A-9A3A-7A1136CC84A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21DEF8E0-A46D-4F1A-9A3A-7A1136CC84A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21DEF8E0-A46D-4F1A-9A3A-7A1136CC84A8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6E4B8F17-7B57-4B85-91C1-7E3A4F4A312D}
+	EndGlobalSection
+EndGlobal
