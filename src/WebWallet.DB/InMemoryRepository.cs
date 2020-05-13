@@ -19,23 +19,38 @@ namespace WebWallet.DB
             switch (entity)
             {
                 case MoneyTransfer transfer:
-                    _transfers.Add(transfer);
-                    break;
-                case CurrencyBalance balance:
-                    if (_balances.TryGetValue(balance.WalletId ?? string.Empty, out var balances))
                     {
-                        if (balances.Any(x => x.Currency == balance.Currency))
+                        _transfers.Add(transfer);
+                        if (!_balances.TryGetValue(transfer.UserWalletId ?? string.Empty, out var balances))
                         {
                             _hasSaveChangesErorr = true;
                         }
                         else
                         {
-                            balances.Add(balance);
+                            if (!string.IsNullOrWhiteSpace(transfer.FromCurrencyId) && balances.Any(x => x.Currency == transfer.FromCurrencyId))
+                            {
+                                _hasSaveChangesErorr = true;
+                            }
                         }
                     }
-                    else
+                    break;
+                case CurrencyBalance balance:
                     {
-                        _hasSaveChangesErorr = true;
+                        if (_balances.TryGetValue(balance.WalletId ?? string.Empty, out var balances))
+                        {
+                            if (balances.Any(x => x.Currency == balance.Currency))
+                            {
+                                _hasSaveChangesErorr = true;
+                            }
+                            else
+                            {
+                                balances.Add(balance);
+                            }
+                        }
+                        else
+                        {
+                            _hasSaveChangesErorr = true;
+                        }
                     }
                     break;
                 case UserWallet wallet when !string.IsNullOrWhiteSpace(wallet.Id) && _balances.ContainsKey(wallet.Id):
@@ -52,6 +67,31 @@ namespace WebWallet.DB
         public void Dispose()
         {
 
+        }
+        /// <inheritdoc/>
+        public bool DoesWalletContainsCurrency(string walletId, string currencyId)
+        {
+            return _balances.Any(x => x.Key == walletId && x.Value.Any(z => z.Currency == currencyId));
+        }
+
+        /// <inheritdoc/>
+        public bool DoesWalletExist(string id)
+        {
+            return _balances.ContainsKey(id);
+        }
+        /// <inheritdoc/>
+        public MoneyTransfer FindTransfer(string id)
+        {
+            return _transfers.FirstOrDefault(x => x.Id == id);
+        }
+        /// <inheritdoc/>
+        public MoneyTransfer FindTransferWithCurrencies(string id)
+        {
+            var transfer = FindTransfer(id);
+            var currencies = _balances[transfer.UserWalletId];
+            transfer.FromCurrency = currencies.FirstOrDefault(x => x.Currency == transfer.FromCurrencyId);
+            transfer.FromCurrency = currencies.FirstOrDefault(x => x.Currency == transfer.ToCurrencyId);
+            return transfer;
         }
         /// <inheritdoc/>
         public UserWallet FindWallet(string id)

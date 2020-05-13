@@ -13,7 +13,7 @@ namespace WebWallet.API.v1.Controllers
     /// <summary>
     /// Controller is responsible for creating and getting info about wallet.
     /// </summary>
-    [Route("api/[controller]", Name = "wallet-route")]
+    [Route("api/[controller]", Name = ApiConstants.WalletRoute)]
     [ApiController]
     [ApiVersion(ApiConstants.V1)]
     public class WalletController : ControllerBase
@@ -46,7 +46,7 @@ namespace WebWallet.API.v1.Controllers
                 await _repository.SaveAsync();
             }
             var replacedId = wallet.Id.Replace("-", string.Empty);
-            return Created($"{Url.RouteUrl("wallet - route")}/{replacedId}", wallet);
+            return Created($"{Url.RouteUrl(ApiConstants.WalletRoute)}/{replacedId}", wallet);
         }
         /// <summary>
         /// 

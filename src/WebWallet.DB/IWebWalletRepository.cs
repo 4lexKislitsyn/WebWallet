@@ -9,6 +9,18 @@ namespace WebWallet.DB
     public interface IWebWalletRepository : IDisposable
     {
         /// <summary>
+        /// Add entity to database.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        bool AddEntity<T>(T entity);
+        /// <summary>
+        /// Save changes.
+        /// </summary>
+        /// <returns></returns>
+        public Task SaveAsync();
+        /// <summary>
         /// Find wallet with passed identifier.
         /// </summary>
         /// <param name="id"></param>
@@ -21,16 +33,29 @@ namespace WebWallet.DB
         /// <returns></returns>
         UserWallet FindWalletWithCurrencies(string id);
         /// <summary>
-        /// Add entity to database.
+        /// Find transfer by identifier.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
+        /// <param name="id"></param>
         /// <returns></returns>
-        bool AddEntity<T>(T entity);
+        MoneyTransfer FindTransfer(string id);
         /// <summary>
-        /// Save changes.
+        /// Find transfer by identifier.
         /// </summary>
+        /// <param name="id"></param>
         /// <returns></returns>
-        public Task SaveAsync();
+        MoneyTransfer FindTransferWithCurrencies(string id);
+        /// <summary>
+        /// Check that wallet exists.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        bool DoesWalletExist(string id);
+        /// <summary>
+        /// Check that wallet contains currency balance.
+        /// </summary>
+        /// <param name="walletId"></param>
+        /// <param name="currencyId"></param>
+        /// <returns></returns>
+        bool DoesWalletContainsCurrency(string walletId, string currencyId);
     }
 }

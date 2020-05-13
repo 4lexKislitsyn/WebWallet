@@ -31,6 +31,10 @@ namespace WebWallet.DB.Entities
         /// </summary>
         public string UserWalletId { get; set; }
         /// <summary>
+        /// Is transfer completed by user.
+        /// </summary>
+        public TransferState State { get; set; }
+        /// <summary>
         /// Currency from which transfer is made.
         /// </summary>
         public virtual CurrencyBalance FromCurrency { get; set; }
