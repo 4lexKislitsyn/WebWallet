@@ -2,3 +2,4 @@
 **/obj/**
 **/bin/**
 **/*.*proj.user
+/src/WebWallet.API/WebWallet.API.xml

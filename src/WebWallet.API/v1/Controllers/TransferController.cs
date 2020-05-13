@@ -9,6 +9,7 @@ namespace WebWallet.API.v1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ApiVersion(ApiConstants.V1)]
     public class TransferController : ControllerBase
     {
     }
