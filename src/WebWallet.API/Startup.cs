@@ -17,6 +17,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using WebWallet.API.ExternalAPI;
+using WebWallet.API.ExternalAPI.Interfaces;
 using WebWallet.DB;
 
 namespace WebWallet.API
@@ -75,6 +77,7 @@ namespace WebWallet.API
             services.AddMvcCore().AddNewtonsoftJson();
 
             services.AddSingleton<IWebWalletRepository, InMemoryRepository>();
+            services.AddTransient<ICurrencyRateService, ECBCurrencyRateService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
