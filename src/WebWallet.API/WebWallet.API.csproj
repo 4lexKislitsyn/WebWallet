@@ -23,5 +23,9 @@
     <Folder Include="v1\Models\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\WebWallet.DB\WebWallet.DB.csproj" />
+  </ItemGroup>
+
 
 </Project>
