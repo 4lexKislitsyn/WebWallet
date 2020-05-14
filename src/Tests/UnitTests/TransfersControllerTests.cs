@@ -64,7 +64,7 @@ namespace UnitTests
             var confirmation = new TransferConfirmation { WalletId = walletGuid };
 
             var result = await _transfersController.ConfirmTransfer(Guid.Empty, confirmation, rateService);
-            IsResult<OkResult>(result, HttpStatusCode.OK);
+            result.IsResult<OkResult>(HttpStatusCode.OK);
             Assert.Positive(currencyBalance.Balance);
             Assert.AreNotEqual(double.PositiveInfinity, currencyBalance.Balance);
         }
@@ -107,9 +107,10 @@ namespace UnitTests
 
             repo.Setup(x => x.DoesWalletContainsCurrency(_emptyGuid, transfer.To))
                 .Returns(true);
+            AddCurrency(repo, transfer);
 
             var result = await _transfersController.CreateTransfer(transfer, rateServiceMoq.Object);
-            var content = IsCreatedWithContent<MoneyTransfer>(result, locationEndsWith: Guid.Parse(moneyTransfer.Id).ToString("N"));
+            var content = result.IsCreatedWithContent<MoneyTransfer>(locationEndsWith: Guid.Parse(moneyTransfer.Id).ToString("N"));
             Assert.AreEqual(moneyTransfer.Id, content.Id);
             Assert.IsFalse(_transferWithoutId.Any(), "Save changes before transfer created.");
         }
@@ -132,7 +133,7 @@ namespace UnitTests
 
             var transferInfo = CreateTransferInfo(type, 1);
             var result = await _transfersController.CreateTransfer(transferInfo, Mock.Of<ICurrencyRateService>(MockBehavior.Strict));
-            IsResult<NotFoundObjectResult>(result, HttpStatusCode.NotFound);
+            result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -158,7 +159,7 @@ namespace UnitTests
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
             var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
-            IsResult<NotFoundObjectResult>(result, HttpStatusCode.NotFound);
+            result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
         }
         /// <summary>
         /// Create transfer from not enough balance.
@@ -194,7 +195,7 @@ namespace UnitTests
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
             var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
-            IsResult<ObjectResult>(result, HttpStatusCode.PaymentRequired);
+            result.IsResult<ObjectResult>(HttpStatusCode.PaymentRequired);
             repo.Verify();
         }
 
@@ -210,14 +211,7 @@ namespace UnitTests
             var transferInfo = CreateTransferInfo(type, 1);
 
             AddWallets(repo, transferInfo.WalletId.ToString());
-
-            repo.Setup(x => x.FindCurrency(_emptyGuid, transferInfo.From))
-                .Returns<string, string>((walletId, currency) => new CurrencyBalance
-                {
-                    Balance = 0,
-                    Currency = currency,
-                    WalletId = walletId,
-                });
+            AddCurrency(repo, transferInfo);
 
             repo.Setup(x => x.DoesWalletContainsCurrency(transferInfo.WalletId.ToString(), transferInfo.To))
                 .Returns(false);
@@ -237,7 +231,7 @@ namespace UnitTests
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
             var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
-            IsCreatedWithContent<MoneyTransfer>(result, null);
+            result.IsCreatedWithContent((Func<MoneyTransfer, string>)null);
             repo.Verify();
         }
 
@@ -253,9 +247,10 @@ namespace UnitTests
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
             AddWallets(repo, transferInfo.WalletId.ToString());
             InitTest(repo.Object);
+            AddCurrency(repo, transferInfo);
 
             var result = await _transfersController.CreateTransfer(transferInfo, Mock.Of<ICurrencyRateService>(MockBehavior.Loose));
-            IsResult<BadRequestObjectResult>(result, HttpStatusCode.BadRequest);
+            result.IsResult<BadRequestObjectResult>(HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -278,7 +273,7 @@ namespace UnitTests
             {
                 WalletId = _emptyGuid
             });
-            IsResult<ForbidResult>(result);
+            result.IsResult<ForbidResult>();
         }
 
         /// <summary>
@@ -298,7 +293,7 @@ namespace UnitTests
                 WalletId = _emptyGuid
             };
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid(), request);
-            IsResult<NotFoundResult>(result, HttpStatusCode.NotFound);
+            result.IsResult<NotFoundResult>(HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -322,7 +317,7 @@ namespace UnitTests
                 WalletId = _emptyGuid
             };
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid(), request);
-            IsResult<NotFoundResult>(result, HttpStatusCode.NotFound);
+            result.IsResult<NotFoundResult>(HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -350,7 +345,7 @@ namespace UnitTests
                 WalletId = walletId
             };
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid(), request);
-            IsResult<OkResult>(result, HttpStatusCode.OK);
+            result.IsResult<OkResult>(HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -390,7 +385,7 @@ namespace UnitTests
                 WalletId = walletId
             };
             var result = await _transfersController.DeleteTransfer(transferId, request);
-            IsResult<OkResult>(result, HttpStatusCode.OK);
+            result.IsResult<OkResult>(HttpStatusCode.OK);
             Assert.AreEqual(TransferState.Deleted, lastSavedState);
         }
         /*
@@ -423,48 +418,48 @@ namespace UnitTests
             };
         }
         
-        private T IsResult<T>(IActionResult result, HttpStatusCode? status = null) where T : class
-        {
-            Assert.IsInstanceOf<T>(result);
-            var convertedResult = result as T;
-            if (status.HasValue)
-            {
-                int? statusCode = null;
-                switch (convertedResult)
-                {
-                    case ObjectResult objectResult:
-                        statusCode = objectResult.StatusCode;
-                        break;
-                    case StatusCodeResult codeResult:
-                        statusCode = codeResult.StatusCode;
-                        break;
-                    default:
-                        Assert.Fail("Cannot check passed status code.");
-                        break;
-                }
-                Assert.AreEqual((int)status.Value, statusCode);
-            }
-            return convertedResult;
-        }
+        //private T IsResult<T>(IActionResult result, HttpStatusCode? status = null) where T : class
+        //{
+        //    Assert.IsInstanceOf<T>(result);
+        //    var convertedResult = result as T;
+        //    if (status.HasValue)
+        //    {
+        //        int? statusCode = null;
+        //        switch (convertedResult)
+        //        {
+        //            case ObjectResult objectResult:
+        //                statusCode = objectResult.StatusCode;
+        //                break;
+        //            case StatusCodeResult codeResult:
+        //                statusCode = codeResult.StatusCode;
+        //                break;
+        //            default:
+        //                Assert.Fail("Cannot check passed status code.");
+        //                break;
+        //        }
+        //        Assert.AreEqual((int)status.Value, statusCode);
+        //    }
+        //    return convertedResult;
+        //}
 
-        private T HasContent<T>(ObjectResult objectResult)
-        {
-            Assert.IsNotNull(objectResult.Value);
-            Assert.IsInstanceOf<T>(objectResult.Value);
-            return (T)objectResult.Value;
-        }
+        //private T HasContent<T>(ObjectResult objectResult)
+        //{
+        //    Assert.IsNotNull(objectResult.Value);
+        //    Assert.IsInstanceOf<T>(objectResult.Value);
+        //    return (T)objectResult.Value;
+        //}
 
-        private T IsCreatedWithContent<T>(IActionResult result, string locationEndsWith)
-        {
-            var createdResult = IsResult<CreatedResult>(result, HttpStatusCode.Created);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(createdResult.Location));
-            if (!string.IsNullOrWhiteSpace(locationEndsWith))
-            {
-                Assert.IsTrue(createdResult.Location.EndsWith(locationEndsWith));
-            }
-            var content = HasContent<T>(createdResult);
-            return content;
-        }
+        //private T IsCreatedWithContent<T>(IActionResult result, string locationEndsWith)
+        //{
+        //    var createdResult = IsResult<CreatedResult>(result, HttpStatusCode.Created);
+        //    Assert.IsFalse(string.IsNullOrWhiteSpace(createdResult.Location));
+        //    if (!string.IsNullOrWhiteSpace(locationEndsWith))
+        //    {
+        //        Assert.IsTrue(createdResult.Location.EndsWith(locationEndsWith));
+        //    }
+        //    var content = HasContent<T>(createdResult);
+        //    return content;
+        //}
 
         private CreateTransfer CreateTransferInfo(TransferType type, double? amount = null, Guid? walletGuid = null)
         {
@@ -508,6 +503,17 @@ namespace UnitTests
         {
             mock.Setup(x => x.DoesWalletExist(It.IsNotNull<string>()))
                 .Returns<string>(x => id.Contains(x));
+        }
+
+        private void AddCurrency(Mock<IWebWalletRepository> repo, CreateTransfer transfer)
+        {
+            repo.Setup(x => x.FindCurrency(transfer.WalletId.ToString(), transfer.From))
+                .Returns<string, string>((wallet, currency) => new CurrencyBalance
+                {
+                    WalletId = wallet,
+                    Currency = currency,
+                    Balance = transfer.Amount + 1,
+                });
         }
 
         public enum TransferType

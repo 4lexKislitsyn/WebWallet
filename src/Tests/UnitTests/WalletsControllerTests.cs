@@ -43,13 +43,7 @@ namespace UnitTests
             _walletController.Url = urlMock.Object;
 
             var result = await _walletController.CreateWallet();
-            Assert.IsInstanceOf<CreatedResult>(result);
-            var createdResult = result as CreatedResult;
-            Assert.AreEqual((int)HttpStatusCode.Created, createdResult.StatusCode);
-            Assert.IsInstanceOf<UserWallet>(createdResult.Value);
-            var wallet = createdResult.Value as UserWallet;
-            Assert.IsFalse(string.IsNullOrWhiteSpace(createdResult.Location));
-            Assert.IsTrue(createdResult.Location.EndsWith(wallet.Id.Replace("-", string.Empty)));
+            result.IsCreatedWithContent<UserWallet>(x=> x.Id.Replace("-", string.Empty));
         }
 
         /// <summary>
