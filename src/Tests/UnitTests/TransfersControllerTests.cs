@@ -40,7 +40,7 @@ namespace UnitTests
             var repo = new Mock<IWebWalletRepository>();
             InitTest(repo.Object);
 
-            var walletGuid = _generator.NextGuid();
+            var walletGuid = _generator.NextGuid().ToString();
 
             var currencyBalance = new CurrencyBalance
             {
@@ -53,7 +53,7 @@ namespace UnitTests
                 {
                     Id = _emptyGuid,
                     Amount = double.MaxValue,
-                    UserWalletId = walletGuid.ToString(),
+                    UserWalletId = walletGuid,
                     State = TransferState.Active,
                     ToCurrencyId = currencyBalance.Currency,
                     ToCurrency = currencyBalance,
@@ -63,7 +63,7 @@ namespace UnitTests
 
             var confirmation = new TransferConfirmation { WalletId = walletGuid };
 
-            var result = await _transfersController.ConfirmTransfer(Guid.Empty, confirmation, rateService);
+            var result = await _transfersController.ConfirmTransfer(_emptyGuid, confirmation, rateService);
             result.IsResult<OkResult>(HttpStatusCode.OK);
             Assert.Positive(currencyBalance.Balance);
             Assert.AreNotEqual(double.PositiveInfinity, currencyBalance.Balance);
@@ -79,7 +79,7 @@ namespace UnitTests
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
             InitTest(repo.Object);
 
-            var transfer = CreateTransferInfo(type, walletGuid: Guid.Empty);
+            var transfer = CreateTransferInfo(type);
 
             var rate = type == TransferType.Transfer 
                 ? _generator.NextDecimal((decimal)double.Epsilon, 10)
@@ -269,7 +269,7 @@ namespace UnitTests
                     Id = id
                 });
 
-            var result = await _transfersController.DeleteTransfer(_generator.NextGuid(), new DeleteTransferRequest
+            var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), new DeleteTransferRequest
             {
                 WalletId = _emptyGuid
             });
@@ -292,7 +292,7 @@ namespace UnitTests
             {
                 WalletId = _emptyGuid
             };
-            var result = await _transfersController.DeleteTransfer(_generator.NextGuid(), request);
+            var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
             result.IsResult<NotFoundResult>(HttpStatusCode.NotFound);
         }
 
@@ -316,7 +316,7 @@ namespace UnitTests
             {
                 WalletId = _emptyGuid
             };
-            var result = await _transfersController.DeleteTransfer(_generator.NextGuid(), request);
+            var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
             result.IsResult<NotFoundResult>(HttpStatusCode.NotFound);
         }
 
@@ -344,7 +344,7 @@ namespace UnitTests
             {
                 WalletId = walletId
             };
-            var result = await _transfersController.DeleteTransfer(_generator.NextGuid(), request);
+            var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
             result.IsResult<OkResult>(HttpStatusCode.OK);
         }
 
@@ -360,10 +360,10 @@ namespace UnitTests
 
             var walletId = _emptyGuid;
 
-            var transferId = _generator.NextGuid();
+            var transferId = _generator.NextGuid().ToString();
             var transfer = new MoneyTransfer
             {
-                Id = transferId.ToString(),
+                Id = transferId,
                 State = TransferState.Active,
                 UserWalletId = walletId
             };
@@ -461,14 +461,14 @@ namespace UnitTests
         //    return content;
         //}
 
-        private CreateTransfer CreateTransferInfo(TransferType type, double? amount = null, Guid? walletGuid = null)
+        private CreateTransfer CreateTransferInfo(TransferType type, double? amount = null, string walletGuid = null)
         {
             return new CreateTransfer
             {
                 From = type != TransferType.Replenish ? _generator.GetString(3) : null,
                 To = type != TransferType.Withdraw ? _generator.GetString(3) : null,
                 Amount = amount ?? _generator.NextDouble(double.Epsilon, 100),
-                WalletId = walletGuid ?? Guid.Empty,
+                WalletId = walletGuid ?? _emptyGuid,
             };
         }
 

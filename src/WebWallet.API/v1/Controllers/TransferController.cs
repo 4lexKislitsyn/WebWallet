@@ -89,7 +89,7 @@ namespace WebWallet.API.v1.Controllers
                 });
             }
             await _repository.SaveAsync();
-            return Created($"{Url.RouteUrl(ApiConstants.TransferRoute)}/{transfer.Id.Replace("-", "")}", transfer);
+            return Created($"{Url.RouteUrl(ApiConstants.TransferRoute)}/{transfer.Id}", transfer);
         }
         /// <summary>
         /// 
@@ -99,7 +99,7 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="currencyRateService"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> ConfirmTransfer(Guid id, TransferConfirmation transferConfirmation, [FromServices] ICurrencyRateService currencyRateService)
+        public async Task<IActionResult> ConfirmTransfer(string id, TransferConfirmation transferConfirmation, [FromServices] ICurrencyRateService currencyRateService)
         {
             var transfer = _repository.FindTransferWithCurrencies(id.ToString());
 
@@ -154,7 +154,7 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="deleteTransfer"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTransfer(Guid id, DeleteTransferRequest deleteTransfer)
+        public async Task<IActionResult> DeleteTransfer(string id, DeleteTransferRequest deleteTransfer)
         {
             var transfer = _repository.FindTransfer(id.ToString());
 

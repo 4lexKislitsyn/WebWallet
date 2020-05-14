@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using WebWallet.API.Helpers;
 using WebWallet.API.v1.DTO;
 using WebWallet.DB;
 using WebWallet.DB.Entities;
@@ -51,8 +50,7 @@ namespace WebWallet.API.v1.Controllers
             {
                 await _repository.SaveAsync();
             }
-            var replacedId = wallet.Id.Replace("-", string.Empty);
-            return Created($"{Url.RouteUrl(ApiConstants.WalletRoute)}/{replacedId}", _mapper.Map<WalletInfo>(wallet));
+            return Created($"{Url.RouteUrl(ApiConstants.WalletRoute)}/{wallet.Id}", _mapper.Map<WalletInfo>(wallet));
         }
         /// <summary>
         /// 
@@ -64,7 +62,7 @@ namespace WebWallet.API.v1.Controllers
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(UserWallet), (int)HttpStatusCode.OK)]
         [HttpGet("{id}")]
-        public IActionResult GetWalletInfo([FromRoute][ModelBinder(BinderType = typeof(GuidModelBinder))] Guid id)
+        public IActionResult GetWalletInfo(string id)
         {
             var wallet = _repository.FindWalletWithCurrencies(id.ToString());
             return wallet == null ? (IActionResult) NotFound() : Ok(_mapper.Map<WalletInfo>(wallet));

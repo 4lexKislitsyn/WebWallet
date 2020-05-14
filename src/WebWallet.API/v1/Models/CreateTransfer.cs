@@ -27,13 +27,13 @@ namespace WebWallet.API.v1.Models
         /// <summary>
         /// Wallet identifier.
         /// </summary>
-        [Required]
-        public Guid WalletId { get; set; }
+        [Required(AllowEmptyStrings = false)]
+        public string WalletId { get; set; }
 
         /// <inheritdoc/>
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (string.IsNullOrWhiteSpace(From) && string.IsNullOrWhiteSpace(To))
+            if (!From.IsDefined() && !To.IsDefined())
             {
                 yield return new ValidationResult("At least one currency should be passed.", new[] { nameof(From), nameof(To) });
             }

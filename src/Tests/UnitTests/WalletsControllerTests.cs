@@ -54,7 +54,7 @@ namespace UnitTests
         [Test]
         public void GetNonExistentWallet()
         {
-            var result = _walletController.GetWalletInfo(Guid.Empty);
+            var result = _walletController.GetWalletInfo(Guid.Empty.ToString());
             Assert.IsInstanceOf<NotFoundResult>(result);
             Assert.AreEqual((int)HttpStatusCode.NotFound, ((NotFoundResult)result).StatusCode);
         }
@@ -80,7 +80,7 @@ namespace UnitTests
             _repository.AddEntity(currency);
             await _repository.SaveAsync();
 
-            var result = _walletController.GetWalletInfo(Guid.Empty);
+            var result = _walletController.GetWalletInfo(Guid.Empty.ToString());
             Assert.IsInstanceOf<OkObjectResult>(result);
             var okResult = result as OkObjectResult;
             Assert.AreEqual((int)HttpStatusCode.OK, okResult.StatusCode);
