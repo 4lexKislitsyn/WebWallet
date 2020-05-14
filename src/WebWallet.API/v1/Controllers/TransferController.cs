@@ -49,6 +49,19 @@ namespace WebWallet.API.v1.Controllers
                 return NotFound($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property.");
             }
 
+            if (transferInfo.From.IsDefined())
+            {
+                var currencyBalance = _repository.FindCurrency(transferInfo.WalletId.ToString(), transferInfo.From);
+                if (currencyBalance == null)
+                {
+                    return NotFound($"You don't have \"{transferInfo.From}\" balance.");
+                }
+                if (currencyBalance.Balance < transferInfo.Amount)
+                {
+                    return StatusCode((int)HttpStatusCode.PaymentRequired, $"You don't have enough money on \"{transferInfo.From}\" balance.");
+                }
+            }
+
             var isCurrencyTransfer = transferInfo.From.IsDefined() && transferInfo.To.IsDefined();
             var rate = isCurrencyTransfer ? await currencyRateService.GetCurrencyRate(transferInfo.From, transferInfo.To) : null;
             if (isCurrencyTransfer && !rate.HasValue)
