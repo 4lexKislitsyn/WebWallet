@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using WebWallet.DB.Entities;
@@ -51,6 +52,10 @@ namespace WebWallet.DB
                         {
                             _hasSaveChangesErorr = true;
                         }
+                        if (string.IsNullOrWhiteSpace(balance.Currency))
+                        {
+                            _hasSaveChangesErorr = true;
+                        }
                     }
                     break;
                 case UserWallet wallet when !string.IsNullOrWhiteSpace(wallet.Id) && _balances.ContainsKey(wallet.Id):
@@ -79,6 +84,17 @@ namespace WebWallet.DB
         {
             return _balances.ContainsKey(id);
         }
+        
+        /// <inheritdoc/>
+        public CurrencyBalance FindCurrency(string walletId, string currency)
+        {
+            if (_balances.TryGetValue(walletId, out var collection))
+            {
+                return collection.FirstOrDefault(x => x.Currency == currency);
+            }
+            return null;
+        }
+
         /// <inheritdoc/>
         public MoneyTransfer FindTransfer(string id)
         {
@@ -88,9 +104,13 @@ namespace WebWallet.DB
         public MoneyTransfer FindTransferWithCurrencies(string id)
         {
             var transfer = FindTransfer(id);
+            if (transfer == null)
+            {
+                return null;
+            }
             var currencies = _balances[transfer.UserWalletId];
             transfer.FromCurrency = currencies.FirstOrDefault(x => x.Currency == transfer.FromCurrencyId);
-            transfer.FromCurrency = currencies.FirstOrDefault(x => x.Currency == transfer.ToCurrencyId);
+            transfer.ToCurrency = currencies.FirstOrDefault(x => x.Currency == transfer.ToCurrencyId);
             return transfer;
         }
         /// <inheritdoc/>
@@ -117,6 +137,10 @@ namespace WebWallet.DB
             if (_hasSaveChangesErorr)
             {
                 throw new Exception();
+            }
+            foreach (var transfer in _transfers.Where(x=> string.IsNullOrWhiteSpace(x.Id)))
+            {
+                transfer.Id = Guid.NewGuid().ToString();
             }
             return Task.CompletedTask;
         }

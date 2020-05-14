@@ -15,6 +15,6 @@ namespace WebWallet.API.v1.Models
         /// Transfer wallet identifier.
         /// </summary>
         [Required]
-        public string WalletId { get; set; }
+        public Guid WalletId { get; set; }
     }
 }

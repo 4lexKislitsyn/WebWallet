@@ -57,5 +57,12 @@ namespace WebWallet.DB
         /// <param name="currencyId"></param>
         /// <returns></returns>
         bool DoesWalletContainsCurrency(string walletId, string currencyId);
+        /// <summary>
+        /// Find wallet currency balance.
+        /// </summary>
+        /// <param name="emptyGuid"></param>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        CurrencyBalance FindCurrency(string walletId, string currency);
     }
 }

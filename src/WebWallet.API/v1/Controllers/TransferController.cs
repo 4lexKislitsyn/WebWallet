@@ -46,7 +46,7 @@ namespace WebWallet.API.v1.Controllers
 
             if (!_repository.DoesWalletExist(transferInfo.WalletId.ToString()))
             {
-                return BadRequest($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property.");
+                return NotFound($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property.");
             }
 
             var isCurrencyTransfer = transferInfo.From.IsDefined() && transferInfo.To.IsDefined();
@@ -62,9 +62,11 @@ namespace WebWallet.API.v1.Controllers
                 ToCurrencyId = transferInfo.To,
                 UserWalletId = transferInfo.WalletId.ToString(),
                 ActualCurrencyRate = rate.HasValue ? (double)rate.Value : 0,
+                Amount = transferInfo.Amount,
             };
+            _repository.AddEntity(transfer);
 
-            if (!_repository.DoesWalletContainsCurrency(transfer.UserWalletId, transfer.ToCurrencyId))
+            if (transfer.ToCurrencyId.IsDefined() && !_repository.DoesWalletContainsCurrency(transfer.UserWalletId, transfer.ToCurrencyId))
             {
                 _repository.AddEntity(new CurrencyBalance
                 {
@@ -73,10 +75,7 @@ namespace WebWallet.API.v1.Controllers
                     WalletId = transfer.UserWalletId
                 });
             }
-
-            _repository.AddEntity(transfer);
             await _repository.SaveAsync();
-
             return Created($"{Url.RouteUrl(ApiConstants.TransferRoute)}/{transfer.Id.Replace("-", "")}", transfer);
         }
         /// <summary>
@@ -101,7 +100,7 @@ namespace WebWallet.API.v1.Controllers
                 return Problem("Sorry, transfer is inconsistent. Please, contact technical support.");
             }
 
-            if (transfer.UserWalletId != transferConfirmation.WalletId)
+            if (transfer.UserWalletId != transferConfirmation.WalletId.ToString())
             {
                 return Forbid();
             }
