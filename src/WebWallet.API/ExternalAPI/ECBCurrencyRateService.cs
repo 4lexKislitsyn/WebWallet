@@ -15,9 +15,17 @@ namespace WebWallet.API.ExternalAPI
     /// </summary>
     public class ECBCurrencyRateService : ICurrencyRateService
     {
+        /// <summary>
+        /// Name of currency identifier attribute.
+        /// </summary>
+        public const string CurrencyAttributeName = "currency";
         /// <inheritdoc/>
         public async Task<decimal?> GetCurrencyRate(string fromCurrency, string toCurrency)
         {
+            if (fromCurrency == toCurrency)
+            {
+                return 1;
+            }
             using var client = new HttpClient()
             {
                 BaseAddress = new Uri("https://www.ecb.europa.eu/")
@@ -30,8 +38,8 @@ namespace WebWallet.API.ExternalAPI
             var responseContent = await response.Content.ReadAsStringAsync();
 
             var xml = XElement.Parse(responseContent);
-            var rates = xml.XPathSelectElements($".//*[local-name()='Cube' and (@currency = '{fromCurrency}' or @currency = '{toCurrency}') and @rate]");
-            var parsedRates = DeserializeElements(rates);
+            var rates = xml.XPathSelectElements($".//*[local-name()='Cube' and (@{CurrencyAttributeName} = '{fromCurrency}' or @{CurrencyAttributeName} = '{toCurrency}') and @rate]");
+            var parsedRates = DeserializeElements(rates).ToArray();
 
             var fromParsedRate = parsedRates.FirstOrDefault(x => x.Currency == fromCurrency);
             var toParsedRate = parsedRates.FirstOrDefault(x => x.Currency == toCurrency);
@@ -45,13 +53,13 @@ namespace WebWallet.API.ExternalAPI
         }
 
 
-        private IEnumerable<CurrencyEntity> DeserializeElements(IEnumerable<XElement> elements)
+        private IEnumerable<ECBCurrencyEntity> DeserializeElements(IEnumerable<XElement> elements)
         {
             if (!elements.Any())
             {
                 yield break;
             }
-            var serializer = new XmlSerializer(typeof(CurrencyEntity));
+            var serializer = new XmlSerializer(typeof(ECBCurrencyEntity));
             foreach (var item in elements)
             {
                 using var reader = item.CreateReader();
@@ -59,16 +67,23 @@ namespace WebWallet.API.ExternalAPI
                 {
                     continue;
                 }
-                yield return serializer.Deserialize(reader) as CurrencyEntity;
+                yield return serializer.Deserialize(reader) as ECBCurrencyEntity;
             }
         }
-
-        [XmlRoot("Cube")]
-        private class CurrencyEntity
+        /// <summary>
+        /// Model of currency's rate from ECB.
+        /// </summary>
+        [XmlRoot("Cube", Namespace = "http://www.ecb.int/vocabulary/2002-08-01/eurofxref")]
+        public class ECBCurrencyEntity
         {
+            /// <summary>
+            /// Currency identifier.
+            /// </summary>
             [XmlAttribute("currency")]
             public string Currency { get; set; }
-
+            /// <summary>
+            /// Currency rate to 1 magic unit.
+            /// </summary>
             [XmlAttribute("rate")]
             public decimal Rate { get; set; }
         }
