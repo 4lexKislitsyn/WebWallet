@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Moq;
 using NUnit.Framework;
@@ -28,7 +29,7 @@ namespace UnitTests
         public void CreateController()
         {
             _repository = new InMemoryRepository();
-            _walletController = new WalletController(_repository);
+            _walletController = new WalletController(_repository, Mock.Of<IMapper>());
         }
         /// <summary>
         /// Check create wallet method.
