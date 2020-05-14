@@ -61,7 +61,7 @@ namespace WebWallet.API.v1.Controllers
         public IActionResult GetWalletInfo(Guid id)
         {
             var wallet = _repository.FindWalletWithCurrencies(id.ToString());
-            return Ok(wallet);
+            return wallet == null ? (IActionResult) NotFound() : Ok(wallet);
         }
     }
 }
