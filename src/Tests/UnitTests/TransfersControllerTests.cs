@@ -22,7 +22,6 @@ namespace UnitTests
         private readonly string _emptyGuid = Guid.Empty.ToString();
         private readonly Randomizer _generator = new Randomizer(DateTime.UtcNow.Minute);
         private TransferController _transfersController;
-        private IWebWalletRepository _repository;
 
         private ICollection<MoneyTransfer> _transferWithoutId = new List<MoneyTransfer>();
 
@@ -159,7 +158,7 @@ namespace UnitTests
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
             var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
-            IsResult<BadRequestObjectResult>(result, HttpStatusCode.NotFound);
+            IsResult<NotFoundObjectResult>(result, HttpStatusCode.NotFound);
         }
         /// <summary>
         /// Create transfer from not enough balance.
@@ -171,11 +170,14 @@ namespace UnitTests
         [TestCase(TransferType.Withdraw)]
         public async Task CreateTransferNotEnoughMoney(TransferType type)
         {
+            var transferInfo = CreateTransferInfo(type, 1);
+
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            AddIdBehaviour(repo);
             InitTest(repo.Object);
 
-            var transferInfo = CreateTransferInfo(type, 1);
+            AddIdBehaviour(repo);
+            AddWallets(repo, transferInfo.WalletId.ToString());
+
             repo.Setup(x => x.DoesWalletContainsCurrency(It.IsNotNull<string>(), transferInfo.From))
                 .Returns(true);
             repo.Setup(x => x.FindCurrency(_emptyGuid, transferInfo.From))
@@ -192,7 +194,7 @@ namespace UnitTests
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
             var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
-            IsResult<StatusCodeResult>(result, HttpStatusCode.PaymentRequired);
+            IsResult<ObjectResult>(result, HttpStatusCode.PaymentRequired);
             repo.Verify();
         }
 
@@ -415,9 +417,10 @@ namespace UnitTests
 
         private void InitTest(IWebWalletRepository repository = null, IUrlHelper urlHelper = null)
         {
-            _repository = repository ?? new InMemoryRepository();
-            _transfersController = new TransferController(_repository);
-            _transfersController.Url = urlHelper ?? Mock.Of<IUrlHelper>();
+            _transfersController = new TransferController(repository ?? new InMemoryRepository())
+            {
+                Url = urlHelper ?? Mock.Of<IUrlHelper>()
+            };
         }
         
         private T IsResult<T>(IActionResult result, HttpStatusCode? status = null) where T : class
