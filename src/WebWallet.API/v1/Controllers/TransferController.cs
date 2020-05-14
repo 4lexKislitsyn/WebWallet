@@ -37,7 +37,7 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="currencyRateService"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> CreateTransfer(TransferInfo transferInfo, [FromServices] ICurrencyRateService currencyRateService)
+        public async Task<IActionResult> CreateTransfer(CreateTransfer transferInfo, [FromServices] ICurrencyRateService currencyRateService)
         {
             if (!ModelState.IsValid)
             {

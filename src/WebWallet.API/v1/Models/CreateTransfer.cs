@@ -9,7 +9,7 @@ namespace WebWallet.API.v1.Models
     /// <summary>
     /// Info about creating transfer.
     /// </summary>
-    public class TransferInfo : IValidatableObject
+    public class CreateTransfer : IValidatableObject
     {
         /// <summary>
         /// Currency identifier from transfer is making. Can be <see langword="null"/> if replenishment is executing.

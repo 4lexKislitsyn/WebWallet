@@ -466,9 +466,9 @@ namespace UnitTests
             return content;
         }
 
-        private TransferInfo CreateTransferInfo(TransferType type, double? amount = null, Guid? walletGuid = null)
+        private CreateTransfer CreateTransferInfo(TransferType type, double? amount = null, Guid? walletGuid = null)
         {
-            return new TransferInfo
+            return new CreateTransfer
             {
                 From = type != TransferType.Replenish ? _generator.GetString(3) : null,
                 To = type != TransferType.Withdraw ? _generator.GetString(3) : null,
