@@ -1,0 +1,9 @@
+sequenceDiagram
+  Client->>+API: POST api/wallet
+  API->>Client: 201 {id}+Location Header
+  Client->>API: GET api/wallet/id
+  API->>Client: 200 Wallet balancies
+  Client->>API: POST api/transfer {walletId}
+  API->>Client: 201 {transferId]+Location Header
+  Client->>API: PUT api/transfer/transferId {walletId}
+  API->>Client: 200

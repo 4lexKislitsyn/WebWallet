@@ -30,12 +30,12 @@ namespace WebWallet.DB
             modelBuilder.Entity<MoneyTransfer>()
                 .HasOne(x => x.FromCurrency)
                 .WithMany(x => x.FromTransfers)
-                .HasForeignKey(x => new { x.FromCurrencyId, x.UserWalletId });
+                .HasForeignKey(x => new { x.FromCurrencyId, x.WalletId });
 
             modelBuilder.Entity<MoneyTransfer>()
                 .HasOne(x => x.ToCurrency)
                 .WithMany(x => x.ToTransfers)
-                .HasForeignKey(x => new { x.ToCurrencyId, x.UserWalletId });
+                .HasForeignKey(x => new { x.ToCurrencyId, x.WalletId });
         }
     }
 }

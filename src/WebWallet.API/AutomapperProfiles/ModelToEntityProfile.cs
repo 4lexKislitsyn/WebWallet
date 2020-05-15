@@ -19,7 +19,7 @@ namespace WebWallet.API.AutomapperProfiles
             CreateMap<v1.Models.CreateTransfer, DB.Entities.MoneyTransfer>()
                 .ForMember(x => x.FromCurrencyId, x => x.MapFrom(z => z.From))
                 .ForMember(x => x.ToCurrencyId, x => x.MapFrom(z => z.To))
-                .ForMember(x=> x.UserWalletId, x=> x.MapFrom(z=> z.WalletId.ToString()));
+                .ForMember(x=> x.WalletId, x=> x.MapFrom(z=> z.WalletId.ToString()));
         }
     }
 }

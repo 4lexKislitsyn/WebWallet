@@ -23,9 +23,9 @@ namespace WebWallet.DB
                 case MoneyTransfer transfer:
                     {
                         _transfers.Add(transfer);
-                        if (!_balances.TryGetValue(transfer.UserWalletId ?? string.Empty, out var balances))
+                        if (!_balances.TryGetValue(transfer.WalletId ?? string.Empty, out var balances))
                         {
-                            _errors.Add($"Unknown Wallet with id {transfer.UserWalletId}.");
+                            _errors.Add($"Unknown Wallet with id {transfer.WalletId}.");
                         }
                     }
                     break;
@@ -102,7 +102,7 @@ namespace WebWallet.DB
             {
                 return null;
             }
-            var currencies = _balances[transfer.UserWalletId];
+            var currencies = _balances[transfer.WalletId];
             transfer.FromCurrency = currencies.FirstOrDefault(x => x.Currency == transfer.FromCurrencyId);
             transfer.ToCurrency = currencies.FirstOrDefault(x => x.Currency == transfer.ToCurrencyId);
             return transfer;

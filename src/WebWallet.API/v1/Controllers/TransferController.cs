@@ -84,19 +84,19 @@ namespace WebWallet.API.v1.Controllers
             {
                 FromCurrencyId = transferInfo.From,
                 ToCurrencyId = transferInfo.To,
-                UserWalletId = transferInfo.WalletId.ToString(),
+                WalletId = transferInfo.WalletId.ToString(),
                 ActualCurrencyRate = (double?)rate,
                 Amount = transferInfo.Amount,
             };
             _repository.AddEntity(transfer);
 
-            if (transfer.ToCurrencyId.IsDefined() && !_repository.DoesWalletContainsCurrency(transfer.UserWalletId, transfer.ToCurrencyId))
+            if (transfer.ToCurrencyId.IsDefined() && !_repository.DoesWalletContainsCurrency(transfer.WalletId, transfer.ToCurrencyId))
             {
                 _repository.AddEntity(new CurrencyBalance
                 {
                     Balance = 0,
                     Currency = transfer.ToCurrencyId,
-                    WalletId = transfer.UserWalletId
+                    WalletId = transfer.WalletId
                 });
             }
             await _repository.SaveAsync();
@@ -113,9 +113,9 @@ namespace WebWallet.API.v1.Controllers
             var transfer = _repository.FindTransfer(id);
             if (transfer == null)
             {
-                return NotFound(new ModelError("Transfer was not found."));
+                return NotFound(new ErrorModel("Transfer was not found."));
             }
-            if (transfer.UserWalletId != actionRequest.WalletId)
+            if (transfer.WalletId != actionRequest.WalletId)
             {
                 return Forbid();
             }
@@ -142,7 +142,7 @@ namespace WebWallet.API.v1.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorModel("Sorry, transfer is inconsistent. Please, contact technical support."));
             }
 
-            if (transfer.UserWalletId != actionRequest.WalletId.ToString())
+            if (transfer.WalletId != actionRequest.WalletId.ToString())
             {
                 return Forbid();
             }
@@ -196,7 +196,7 @@ namespace WebWallet.API.v1.Controllers
                 return NotFound(new ErrorModel("Suitable transfer to complete was not found. You can delete only active transfers."));
             }
 
-            if (transfer.UserWalletId != actionRequest.WalletId)
+            if (transfer.WalletId != actionRequest.WalletId)
             {
                 return Forbid();
             }

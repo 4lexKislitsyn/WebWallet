@@ -31,7 +31,7 @@ namespace WebWallet.DB.Entities
         /// <summary>
         /// Transfer wallet identifier.
         /// </summary>
-        public string UserWalletId { get; set; }
+        public string WalletId { get; set; }
         /// <summary>
         /// Is transfer completed by user.
         /// </summary>
@@ -49,7 +49,7 @@ namespace WebWallet.DB.Entities
         /// <summary>
         /// Transfer wallet.
         /// </summary>
-        [ForeignKey(nameof(UserWalletId))]
+        [ForeignKey(nameof(WalletId))]
         public virtual UserWallet Wallet { get; set; }
     }
 }

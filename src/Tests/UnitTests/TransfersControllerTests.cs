@@ -66,7 +66,7 @@ namespace UnitTests
                 {
                     Id = _emptyGuid,
                     Amount = double.MaxValue,
-                    UserWalletId = walletGuid,
+                    WalletId = walletGuid,
                     State = TransferState.Active,
                     ToCurrencyId = currencyBalance.Currency,
                     ToCurrency = currencyBalance,
@@ -310,7 +310,7 @@ namespace UnitTests
             repo.Setup(x => x.FindTransfer(It.IsNotNull<string>()))
                 .Returns<string>(id => new MoneyTransfer
                 {
-                    UserWalletId = _generator.NextGuid().ToString(),
+                    WalletId = _generator.NextGuid().ToString(),
                     Id = id
                 });
 
@@ -384,7 +384,7 @@ namespace UnitTests
                 {
                     Id = id,
                     State = TransferState.Deleted,
-                    UserWalletId = walletId
+                    WalletId = walletId
                 });
 
             var request = new TransferActionRequest
@@ -412,7 +412,7 @@ namespace UnitTests
             {
                 Id = transferId,
                 State = TransferState.Active,
-                UserWalletId = walletId
+                WalletId = walletId
             };
 
             var lastSavedState = transfer.State;
