@@ -1,4 +1,6 @@
-﻿namespace WebWallet.DB.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace WebWallet.DB.Entities
 {
     public class CurrencyBalance
     {
@@ -20,6 +22,7 @@
         /// <summary>
         /// The wallet to which balance belongs.
         /// </summary>
+        [ForeignKey(nameof(WalletId))]
         public virtual UserWallet Wallet { get; set; }
     }
 }

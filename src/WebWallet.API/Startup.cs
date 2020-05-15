@@ -28,12 +28,14 @@ namespace WebWallet.API
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             Configuration = configuration;
+            HostEnvironment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IWebHostEnvironment HostEnvironment { get; private set; }
 
         /// <summary>
         /// Gets path to XML documentation for current assembly.
@@ -79,7 +81,6 @@ namespace WebWallet.API
 
             services.AddMvcCore().AddNewtonsoftJson();
 
-            services.AddSingleton<IWebWalletRepository, InMemoryRepository>();
             services.AddTransient<ICurrencyRateService, ECBCurrencyRateService>();
 
             services.AddAutoMapper(typeof(AutomapperProfiles.EntityToModelProfile), typeof(AutomapperProfiles.ModelToEntityProfile));
@@ -93,6 +94,8 @@ namespace WebWallet.API
                     return new ModelValidationFailedResult(context.ModelState);
                 };
             });
+
+            services.AddDatabase(Configuration, HostEnvironment.IsDevelopment());
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

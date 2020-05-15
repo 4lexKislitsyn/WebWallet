@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace WebWallet.DB.Entities
@@ -37,14 +38,17 @@ namespace WebWallet.DB.Entities
         /// <summary>
         /// Currency from which transfer is made.
         /// </summary>
+        [ForeignKey(nameof(FromCurrencyId))]
         public virtual CurrencyBalance FromCurrency { get; set; }
         /// <summary>
         /// Currency to which transfer is made.
         /// </summary>
+        [ForeignKey(nameof(ToCurrencyId))]
         public virtual CurrencyBalance ToCurrency { get; set; }
         /// <summary>
         /// Transfer wallet.
         /// </summary>
+        [ForeignKey(nameof(UserWalletId))]
         public virtual UserWallet Wallet { get; set; }
     }
 }
