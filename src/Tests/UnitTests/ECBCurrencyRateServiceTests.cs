@@ -13,6 +13,8 @@ using WebWallet.API.ExternalAPI;
 
 namespace UnitTests
 {
+    [TestFixture]
+    [Order(2)]
     public class ECBCurrencyRateServiceTests
     {
         public static readonly string[] Currencies = GetCurrencies().ToArray();

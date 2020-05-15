@@ -19,7 +19,13 @@ namespace WebWallet.API.AutomapperProfiles
         public EntityToModelProfile()
         {
             CreateMap<CurrencyBalance, BalanceInfo>();
-            CreateMap<UserWallet, WalletInfo>();
+            CreateMap<UserWallet, WalletInfo>()
+                .ForMember(x => x.Balances, x => x.MapFrom(src => src.Balances.Where(z => z.Balance > 0)));
+
+            CreateMap<MoneyTransfer, TransferInfo>()
+                .ForMember(x => x.From, x=> x.MapFrom(src => src.FromCurrencyId))
+                .ForMember(x => x.To, x => x.MapFrom(src => src.ToCurrencyId))
+                .ForMember(x=> x.Rate, x=> x.MapFrom(src => src.ActualCurrencyRate > 0 ? src.ActualCurrencyRate : (double?)null));
         }
     }
 }

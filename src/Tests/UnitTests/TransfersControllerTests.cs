@@ -17,6 +17,7 @@ using WebWallet.DB.Entities;
 namespace UnitTests
 {
     [TestFixture]
+    [Order(1)]
     public class TransfersControllerTests
     {
         private readonly string _emptyGuid = Guid.Empty.ToString();
@@ -110,7 +111,7 @@ namespace UnitTests
             AddCurrency(repo, transfer);
 
             var result = await _transfersController.CreateTransfer(transfer, rateServiceMoq.Object);
-            var content = result.IsCreatedWithContent<MoneyTransfer>(locationEndsWith: Guid.Parse(moneyTransfer.Id).ToString("N"));
+            var content = result.IsCreatedWithContent<MoneyTransfer>(locationEndsWith: moneyTransfer.Id);
             Assert.AreEqual(moneyTransfer.Id, content.Id);
             Assert.IsFalse(_transferWithoutId.Any(), "Save changes before transfer created.");
         }

@@ -12,13 +12,16 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using WebWallet.API;
+using WebWallet.API.AutomapperProfiles;
 using WebWallet.API.v1.Controllers;
+using WebWallet.API.v1.DTO;
 using WebWallet.DB;
 using WebWallet.DB.Entities;
 
 namespace UnitTests
 {
     [TestFixture]
+    [Order(1)]
     public class WalletsControllerTests
     {
         private readonly Randomizer _generator = new Randomizer(DateTime.UtcNow.Minute);
@@ -29,7 +32,14 @@ namespace UnitTests
         public void CreateController()
         {
             _repository = new InMemoryRepository();
-            _walletController = new WalletController(_repository, Mock.Of<IMapper>());
+
+            var mapper = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<EntityToModelProfile>();
+                cfg.AddProfile<ModelToEntityProfile>();
+            }).CreateMapper();
+
+            _walletController = new WalletController(_repository, mapper);
         }
         /// <summary>
         /// Check create wallet method.
@@ -44,7 +54,7 @@ namespace UnitTests
             _walletController.Url = urlMock.Object;
 
             var result = await _walletController.CreateWallet();
-            result.IsCreatedWithContent<UserWallet>(x=> x.Id.Replace("-", string.Empty));
+            result.IsCreatedWithContent<WalletInfo>(x=> x.Id);
         }
 
         /// <summary>
@@ -81,11 +91,8 @@ namespace UnitTests
             await _repository.SaveAsync();
 
             var result = _walletController.GetWalletInfo(Guid.Empty.ToString());
-            Assert.IsInstanceOf<OkObjectResult>(result);
-            var okResult = result as OkObjectResult;
-            Assert.AreEqual((int)HttpStatusCode.OK, okResult.StatusCode);
-            Assert.IsInstanceOf<UserWallet>(okResult.Value);
-            var wallet = okResult.Value as UserWallet;
+            var okResult = result.IsResult<OkObjectResult>(HttpStatusCode.OK);
+            var wallet = okResult.HasContent<WalletInfo>();
             Assert.AreEqual(emptyGuid, wallet.Id);
             Assert.AreEqual(1, wallet.Balances.Count());
             Assert.AreEqual(currency.Currency, wallet.Balances.First().Currency);
