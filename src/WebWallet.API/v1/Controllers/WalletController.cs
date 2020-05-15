@@ -18,6 +18,7 @@ namespace WebWallet.API.v1.Controllers
     [Route("api/[controller]", Name = ApiConstants.WalletRoute)]
     [ApiController]
     [ApiVersion(ApiConstants.V1)]
+    [Helpers.ModelValidation.ValidateModelAtrribute]
     public class WalletController : ControllerBase
     {
         private readonly IWebWalletRepository _repository;

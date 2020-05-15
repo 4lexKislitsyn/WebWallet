@@ -18,6 +18,7 @@ namespace WebWallet.API.v1.Controllers
     [Route("api/[controller]", Name = ApiConstants.TransferRoute)]
     [ApiController]
     [ApiVersion(ApiConstants.V1)]
+    [Helpers.ModelValidation.ValidateModelAtrribute]
     public class TransferController : ControllerBase
     {
         private readonly IWebWalletRepository _repository;
@@ -37,13 +38,9 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="currencyRateService"></param>
         /// <returns></returns>
         [HttpPost]
+        [Helpers.ModelValidation.ValidateModelAtrribute]
         public async Task<IActionResult> CreateTransfer(CreateTransfer transferInfo, [FromServices] ICurrencyRateService currencyRateService)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             if (!_repository.DoesWalletExist(transferInfo.WalletId.ToString()))
             {
                 return NotFound($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property.");
