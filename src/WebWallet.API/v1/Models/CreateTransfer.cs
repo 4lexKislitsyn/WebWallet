@@ -38,6 +38,10 @@ namespace WebWallet.API.v1.Models
             {
                 yield return new ValidationResult("At least one currency should be passed.", new[] { nameof(From), nameof(To) });
             }
+            else if (From == To)
+            {
+                yield return new ValidationResult("You cannot make transfer in same currency.", new[] { nameof(From), nameof(To) });
+            }
         }
     }
 }

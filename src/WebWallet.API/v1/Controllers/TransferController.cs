@@ -193,7 +193,7 @@ namespace WebWallet.API.v1.Controllers
 
             if (transfer == null || transfer.State == TransferState.Completed)
             {
-                return NotFound(new ErrorModel("Suitable transfer to complete was not found. You can delete only active transfers."));
+                return NotFound(new ErrorModel("Suitable transfer to delete was not found. You can delete only active transfers."));
             }
 
             if (transfer.WalletId != actionRequest.WalletId)
