@@ -82,5 +82,19 @@ namespace UnitTests
             }
             return content;
         }
+
+        /// <summary>
+        /// Check that result is instance of <typeparamref name="TResult"/> and has content of type <typeparamref name="TContent"/>.
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <typeparam name="TContent"></typeparam>
+        /// <param name="result"></param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        public static TContent IsResultWithContent<TResult, TContent>(this IActionResult result, HttpStatusCode? code = null) where TResult : ObjectResult
+        {
+            var objectResult = result.IsResult<TResult>(code);
+            return objectResult.HasContent<TContent>();
+        }
     }
 }

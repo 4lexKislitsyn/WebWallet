@@ -79,7 +79,7 @@ namespace UnitTests
 
             InitController(repo.Object, rateService: rateService);
             var result = await _transfersController.ConfirmTransfer(_emptyGuid, confirmation);
-            result.IsResult<OkResult>(HttpStatusCode.OK);
+            result.IsResultWithContent<OkObjectResult, TransferInfo>(HttpStatusCode.OK);
             Assert.Positive(currencyBalance.Balance);
             Assert.AreNotEqual(double.PositiveInfinity, currencyBalance.Balance);
         }
@@ -155,7 +155,7 @@ namespace UnitTests
 
             InitController(repo.Object, rateService: Mock.Of<ICurrencyRateService>(MockBehavior.Strict));
             var result = await _transfersController.CreateTransfer(transferInfo);
-            result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
+            result.IsResultWithContent<NotFoundObjectResult, ErrorModel>(HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace UnitTests
 
             InitController(repo.Object, rateService: rateService.Object);
             var result = await _transfersController.CreateTransfer(transferInfo);
-            result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
+            result.IsResultWithContent<NotFoundObjectResult, ErrorModel>(HttpStatusCode.NotFound);
         }
         /// <summary>
         /// Create transfer from not enough balance.
@@ -217,7 +217,7 @@ namespace UnitTests
 
             InitController(repo.Object, rateService: rateService.Object);
             var result = await _transfersController.CreateTransfer(transferInfo);
-            result.IsResult<ObjectResult>(HttpStatusCode.PaymentRequired);
+            result.IsResultWithContent<ObjectResult, ErrorModel>(HttpStatusCode.PaymentRequired);
             repo.Verify();
         }
 
@@ -272,7 +272,7 @@ namespace UnitTests
 
             InitController(repo.Object, rateService: Mock.Of<ICurrencyRateService>(MockBehavior.Loose));
             var result = await _transfersController.CreateTransfer(transferInfo);
-            result.IsResult<BadRequestObjectResult>(HttpStatusCode.BadRequest);
+            result.IsResultWithContent<BadRequestObjectResult, ErrorModel>(HttpStatusCode.BadRequest);
         }
         /// <summary>
         /// Check exception handling when rate service is unavailable.
@@ -296,8 +296,7 @@ namespace UnitTests
             {
                 result = await _transfersController.CreateTransfer(transferInfo);
             }, "Action shouldn't throw exception if rate service is unavailable.");
-            var objectResult = result.IsResult<ObjectResult>(HttpStatusCode.ServiceUnavailable);
-            objectResult.HasContent<ErrorModel>();
+            result.IsResultWithContent<ObjectResult, ErrorModel>(HttpStatusCode.ServiceUnavailable);
         }
 
         /// <summary>
@@ -340,8 +339,7 @@ namespace UnitTests
             };
             InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
-            var notFoundResult = result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
-            notFoundResult.HasContent<ErrorModel>();
+            result.IsResultWithContent<NotFoundObjectResult, ErrorModel>(HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -365,8 +363,7 @@ namespace UnitTests
                 WalletId = _emptyGuid
             };
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
-            var notFoundResult = result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
-            notFoundResult.HasContent<ErrorModel>();
+            result.IsResultWithContent<NotFoundObjectResult, ErrorModel>(HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -394,7 +391,8 @@ namespace UnitTests
             };
             InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
-            result.IsResult<OkResult>(HttpStatusCode.OK);
+            var transferInfo = result.IsResultWithContent<OkObjectResult, TransferInfo>(HttpStatusCode.OK);
+            Assert.AreEqual(TransferState.Deleted.ToString(), transferInfo.State);
         }
 
         /// <summary>
@@ -434,7 +432,8 @@ namespace UnitTests
             };
             InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(transferId, request);
-            result.IsResult<OkResult>(HttpStatusCode.OK);
+            var transferInfo = result.IsResultWithContent<OkObjectResult, TransferInfo>(HttpStatusCode.OK);
+            Assert.AreEqual(TransferState.Deleted.ToString(), transferInfo.State);
             Assert.AreEqual(TransferState.Deleted, lastSavedState);
         }
         /*

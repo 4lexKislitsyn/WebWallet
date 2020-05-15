@@ -92,8 +92,7 @@ namespace UnitTests
             await _repository.SaveAsync();
 
             var result = _walletController.GetWalletInfo(Guid.Empty.ToString());
-            var okResult = result.IsResult<OkObjectResult>(HttpStatusCode.OK);
-            var wallet = okResult.HasContent<WalletInfo>();
+            var wallet = result.IsResultWithContent<OkObjectResult, WalletInfo>(HttpStatusCode.OK);
             Assert.AreEqual(emptyGuid, wallet.Id);
             Assert.AreEqual(1, wallet.Balances.Count());
             Assert.AreEqual(currency.Currency, wallet.Balances.First().Currency);

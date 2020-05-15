@@ -47,6 +47,16 @@ namespace WebWallet.API.v1.Controllers
         /// </summary>
         /// <param name="transferInfo"></param>
         /// <returns></returns>
+        /// <response code="201">The transfer was created.</response>
+        /// <response code="404">Wallet was not found or you don't have currency balance to make operation from.</response>
+        /// <response code="402">Not enough money to make operation.</response>
+        /// <response code="400">Transfer for the currencies is unsupported.</response>
+        /// <response code="403">Transfer belongs to another wallet.</response>
+        [ProducesResponseType(typeof(TransferInfo), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status402PaymentRequired)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [HttpPost]
         public async Task<IActionResult> CreateTransfer(CreateTransfer transferInfo)
         {
@@ -108,6 +118,12 @@ namespace WebWallet.API.v1.Controllers
         /// Get info about transfer.
         /// </summary>
         /// <returns></returns>
+        /// <response code="200">The transfer was found.</response>
+        /// <response code="404">Transfer was not found.</response>
+        /// <response code="403">Transfer belongs to another wallet.</response>
+        [ProducesResponseType(typeof(TransferInfo), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [HttpGet("{id}")]
         public IActionResult GetTransfer(string id, [FromQuery] TransferActionRequest actionRequest)
         {
@@ -130,6 +146,18 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="id"></param>
         /// <param name="actionRequest"></param>
         /// <returns></returns>
+        /// <response code="200">The transfer was completed.</response>
+        /// <response code="404">Transfer wasn't found or it isn't active.</response>
+        /// <response code="402">Not enough money to confirm operation.</response>
+        /// <response code="500">Both currencies is null after getting from repository.</response>
+        /// <response code="503">Cannot transfer currencies anymore.</response>
+        /// <response code="403">Transfer belongs to another wallet.</response>
+        [ProducesResponseType(typeof(TransferInfo), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status402PaymentRequired)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status503ServiceUnavailable)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [HttpPut("{id}")]
         public async Task<IActionResult> ConfirmTransfer(string id, TransferActionRequest actionRequest)
         {
@@ -152,7 +180,7 @@ namespace WebWallet.API.v1.Controllers
 
             if (!transfer.FromCurrency.IsNull() && transfer.FromCurrency.Balance < transfer.Amount)
             {
-                return StatusCode((int)HttpStatusCode.PaymentRequired, new ErrorModel("Not enough money to confirm transfer."));
+                return StatusCode(StatusCodes.Status402PaymentRequired, new ErrorModel("Not enough money to confirm transfer."));
             }
 
             if (!transfer.FromCurrency.IsNull() && !transfer.ToCurrency.IsNull())
@@ -181,7 +209,7 @@ namespace WebWallet.API.v1.Controllers
             transfer.State = TransferState.Completed;
             await _repository.SaveAsync();
 
-            return Ok();
+            return Ok(_mapper.Map<TransferInfo>(transfer));
         }
         /// <summary>
         /// Delete active transfer.
@@ -189,6 +217,12 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="id"></param>
         /// <param name="actionRequest"></param>
         /// <returns></returns>
+        /// <response code="404">Transfer wasn't found or it is completed.</response>
+        /// <response code="200">The transfer was deleted.</response>
+        /// <response code="403">Transfer belongs to another wallet.</response>
+        [ProducesResponseType(typeof(TransferInfo), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTransfer(string id, TransferActionRequest actionRequest)
         {
@@ -214,7 +248,7 @@ namespace WebWallet.API.v1.Controllers
                 await _repository.SaveAsync();
             }
 
-            return Ok();
+            return Ok(_mapper.Map<TransferInfo>(transfer));
         }
 
         private async Task<(ObjectResult result, decimal? rateValue)> TryGetRate(string fromCurrency, string toCurrency)

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WebWallet.API.v1.DTO;
+using WebWallet.API.v1.Models;
 using WebWallet.DB;
 using WebWallet.DB.Entities;
 
@@ -41,7 +42,10 @@ namespace WebWallet.API.v1.Controllers
         /// Create new wallet/user.
         /// </summary>
         /// <returns></returns>
-        [ProducesResponseType(typeof(UserWallet), (int)HttpStatusCode.OK)]
+        /// <response code="201">The wallet was created.</response>
+        /// <response code="500">Cannot add new entity to repository.</response>
+        [ProducesResponseType(typeof(WalletInfo), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status500InternalServerError)]
         [HttpPost]
         public async Task<IActionResult> CreateWallet()
         {
@@ -50,7 +54,7 @@ namespace WebWallet.API.v1.Controllers
             if (!_repository.AddEntity(wallet))
             {
                 _logger.LogCritical("Cannot add wallet entity to repository.");
-                return Problem();
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorModel("Problem with adding new wallet was occurred. Please try again later or contact technical support."));
             }
             else
             {
@@ -60,14 +64,14 @@ namespace WebWallet.API.v1.Controllers
             return Created($"{Url.RouteUrl(ApiConstants.WalletRoute)}/{wallet.Id}", _mapper.Map<WalletInfo>(wallet));
         }
         /// <summary>
-        /// 
+        /// Get info about wallet.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         /// <response code="404">Wallet with passed identifier wasn't found.</response>
-        /// <response code="200">The wallet was found and passed as response body.</response>
-        [ProducesResponseType((int)HttpStatusCode.NotFound)]
-        [ProducesResponseType(typeof(UserWallet), (int)HttpStatusCode.OK)]
+        /// <response code="200">The wallet was found.</response>
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(WalletInfo), StatusCodes.Status200OK)]
         [HttpGet("{id}")]
         public IActionResult GetWalletInfo(string id)
         {
