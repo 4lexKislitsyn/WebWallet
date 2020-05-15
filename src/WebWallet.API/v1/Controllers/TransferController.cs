@@ -60,7 +60,18 @@ namespace WebWallet.API.v1.Controllers
             }
 
             var isCurrencyTransfer = transferInfo.From.IsDefined() && transferInfo.To.IsDefined();
-            var rate = isCurrencyTransfer ? await currencyRateService.GetCurrencyRate(transferInfo.From, transferInfo.To) : null;
+            decimal? rate = null;
+            if (isCurrencyTransfer)
+            {
+                try
+                {
+                    rate = await currencyRateService.GetCurrencyRate(transferInfo.From, transferInfo.To);
+                }
+                catch (Exception)
+                {
+                    return StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorModel("Currency rate temporary unavailable. Please, try again later."));
+                }
+            }
             if (isCurrencyTransfer && !rate.HasValue)
             {
                 return BadRequest("Sorry. Cannot transfer this currency.");
@@ -107,7 +118,7 @@ namespace WebWallet.API.v1.Controllers
 
             if (transfer.FromCurrency.IsNull() && transfer.ToCurrency.IsNull())
             {
-                return Problem("Sorry, transfer is inconsistent. Please, contact technical support.");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorModel("Sorry, transfer is inconsistent. Please, contact technical support."));
             }
 
             if (transfer.UserWalletId != transferConfirmation.WalletId.ToString())
@@ -117,7 +128,7 @@ namespace WebWallet.API.v1.Controllers
 
             if (!transfer.FromCurrency.IsNull() && transfer.FromCurrency.Balance < transfer.Amount)
             {
-                return StatusCode((int)HttpStatusCode.PaymentRequired, "Not enough money to confirm transfer.");
+                return StatusCode((int)HttpStatusCode.PaymentRequired, new ErrorModel("Not enough money to confirm transfer."));
             }
 
             if (!transfer.FromCurrency.IsNull() && !transfer.ToCurrency.IsNull())

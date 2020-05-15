@@ -253,6 +253,30 @@ namespace UnitTests
             var result = await _transfersController.CreateTransfer(transferInfo, Mock.Of<ICurrencyRateService>(MockBehavior.Loose));
             result.IsResult<BadRequestObjectResult>(HttpStatusCode.BadRequest);
         }
+        /// <summary>
+        /// Check exception handling when rate service is unavailable.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public void CreateTransferRateServiceUnavailable()
+        {
+            var transferInfo = CreateTransferInfo(TransferType.Transfer);
+            var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
+            AddWallets(repo, transferInfo.WalletId.ToString());
+            InitTest(repo.Object);
+            AddCurrency(repo, transferInfo);
+
+            var rateService = new Mock<ICurrencyRateService>();
+            rateService.Setup(x => x.GetCurrencyRate(It.IsAny<string>(), It.IsAny<string>()))
+                .Throws<Exception>();
+            IActionResult result = null;
+            Assert.DoesNotThrowAsync(async () =>
+            {
+                result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
+            }, "Action shouldn't throw exception if rate service is unavailable.");
+            var objectResult = result.IsResult<ObjectResult>(HttpStatusCode.ServiceUnavailable);
+            objectResult.HasContent<ErrorModel>();
+        }
 
         /// <summary>
         /// Delete transfer belongs to another wallet.
@@ -418,49 +442,6 @@ namespace UnitTests
                 Url = urlHelper ?? Mock.Of<IUrlHelper>()
             };
         }
-        
-        //private T IsResult<T>(IActionResult result, HttpStatusCode? status = null) where T : class
-        //{
-        //    Assert.IsInstanceOf<T>(result);
-        //    var convertedResult = result as T;
-        //    if (status.HasValue)
-        //    {
-        //        int? statusCode = null;
-        //        switch (convertedResult)
-        //        {
-        //            case ObjectResult objectResult:
-        //                statusCode = objectResult.StatusCode;
-        //                break;
-        //            case StatusCodeResult codeResult:
-        //                statusCode = codeResult.StatusCode;
-        //                break;
-        //            default:
-        //                Assert.Fail("Cannot check passed status code.");
-        //                break;
-        //        }
-        //        Assert.AreEqual((int)status.Value, statusCode);
-        //    }
-        //    return convertedResult;
-        //}
-
-        //private T HasContent<T>(ObjectResult objectResult)
-        //{
-        //    Assert.IsNotNull(objectResult.Value);
-        //    Assert.IsInstanceOf<T>(objectResult.Value);
-        //    return (T)objectResult.Value;
-        //}
-
-        //private T IsCreatedWithContent<T>(IActionResult result, string locationEndsWith)
-        //{
-        //    var createdResult = IsResult<CreatedResult>(result, HttpStatusCode.Created);
-        //    Assert.IsFalse(string.IsNullOrWhiteSpace(createdResult.Location));
-        //    if (!string.IsNullOrWhiteSpace(locationEndsWith))
-        //    {
-        //        Assert.IsTrue(createdResult.Location.EndsWith(locationEndsWith));
-        //    }
-        //    var content = HasContent<T>(createdResult);
-        //    return content;
-        //}
 
         private CreateTransfer CreateTransferInfo(TransferType type, double? amount = null, string walletGuid = null)
         {
