@@ -96,7 +96,7 @@ namespace UnitTests
 
             var rate = type == TransferType.Transfer 
                 ? _generator.NextDecimal((decimal)double.Epsilon, 10)
-                : 0;
+                : (decimal?)null;
 
             var rateServiceMoq = new Mock<ICurrencyRateService>(MockBehavior.Strict);
             if (type == TransferType.Transfer)
@@ -112,7 +112,14 @@ namespace UnitTests
                 Assert.AreEqual(transfer.From, entity.FromCurrencyId);
                 Assert.AreEqual(transfer.To, entity.ToCurrencyId);
                 Assert.AreEqual(transfer.Amount, entity.Amount);
-                Assert.AreEqual(rate, entity.ActualCurrencyRate);
+                if (rate.HasValue)
+                {
+                    Assert.AreEqual((double)rate.Value, entity.ActualCurrencyRate);
+                }
+                else
+                {
+                    Assert.IsNull(entity.ActualCurrencyRate);
+                }
                 moneyTransfer = entity;
             });
 

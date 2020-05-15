@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebWallet.DB.Entities
 {
@@ -20,9 +21,19 @@ namespace WebWallet.DB.Entities
         public string WalletId { get; set; }
 
         /// <summary>
-        /// The wallet to which balance belongs.
+        /// The wallet to which the balance belongs.
         /// </summary>
         [ForeignKey(nameof(WalletId))]
         public virtual UserWallet Wallet { get; set; }
+        /// <summary>
+        /// Transfers from the balance.
+        /// </summary>
+        /// <remarks>Foreign key is setting by Fluent API.</remarks>
+        public virtual IEnumerable<MoneyTransfer> FromTransfers { get; set; }
+        /// <summary>
+        /// Transfers to the balance.
+        /// </summary>
+        /// <remarks>Foreign key is setting by Fluent API.</remarks>
+        public virtual IEnumerable<MoneyTransfer> ToTransfers { get; set; }
     }
 }

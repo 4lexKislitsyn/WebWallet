@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace WebWallet.DB.Entities
@@ -9,6 +10,7 @@ namespace WebWallet.DB.Entities
         /// <summary>
         /// Identifier of user wallet entity.
         /// </summary>
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public string Id { get; set; }
 
         /// <summary>

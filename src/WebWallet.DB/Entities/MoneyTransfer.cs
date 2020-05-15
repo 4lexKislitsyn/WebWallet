@@ -10,6 +10,7 @@ namespace WebWallet.DB.Entities
         /// <summary>
         /// Identifier of transfer.
         /// </summary>
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public string Id { get; set; }
         /// <summary>
         /// Currency identifier from which transfer is made.
@@ -26,7 +27,7 @@ namespace WebWallet.DB.Entities
         /// <summary>
         /// Currency rate on moment when transfer was made.
         /// </summary>
-        public double ActualCurrencyRate { get; set; }
+        public double? ActualCurrencyRate { get; set; }
         /// <summary>
         /// Transfer wallet identifier.
         /// </summary>
@@ -38,12 +39,12 @@ namespace WebWallet.DB.Entities
         /// <summary>
         /// Currency from which transfer is made.
         /// </summary>
-        [ForeignKey(nameof(FromCurrencyId))]
+        /// <remarks>Composite foreign key is setting by Fluent API.</remarks>
         public virtual CurrencyBalance FromCurrency { get; set; }
         /// <summary>
         /// Currency to which transfer is made.
         /// </summary>
-        [ForeignKey(nameof(ToCurrencyId))]
+        /// <remarks>Composite foreign key is setting by Fluent API.</remarks>
         public virtual CurrencyBalance ToCurrency { get; set; }
         /// <summary>
         /// Transfer wallet.

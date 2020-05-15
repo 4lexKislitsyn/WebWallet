@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace WebWallet.DB
@@ -25,6 +26,7 @@ namespace WebWallet.DB
             }
             else
             {
+                var assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
                 services.AddScoped<IWebWalletRepository, DBRepository>();
                 var connectionString = configuration.GetConnectionString(DatabaseConenctionName);
                 if (string.IsNullOrWhiteSpace(connectionString))
@@ -33,7 +35,7 @@ namespace WebWallet.DB
                 }
                 services.AddDbContext<WebWalletContext>(optionsAction =>
                 {
-                    optionsAction.UseMySql(connectionString,mySqlOptionsAction => mySqlOptionsAction.MigrationsAssembly(nameof(DB)));
+                    optionsAction.UseMySql(connectionString,mySqlOptionsAction => mySqlOptionsAction.MigrationsAssembly(assemblyName));
                 });
             }
             return services;

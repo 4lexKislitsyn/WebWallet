@@ -87,6 +87,7 @@ namespace UnitTests
                 Id = _generator.NextGuid().ToString(),
                 Amount = _generator.NextDouble(),
                 State = state,
+                ActualCurrencyRate = type == TransfersControllerTests.TransferType.Transfer ? _generator.NextDouble() : (double?)null,
             };
 
             if (type != TransfersControllerTests.TransferType.Replenish)
@@ -124,7 +125,7 @@ namespace UnitTests
                 Assert.IsNull(model.To);
             }
             
-            if (transfer.ActualCurrencyRate > 0)
+            if (transfer.ActualCurrencyRate.HasValue)
             {
                 Assert.AreEqual(transfer.ActualCurrencyRate, model.Rate);
             }

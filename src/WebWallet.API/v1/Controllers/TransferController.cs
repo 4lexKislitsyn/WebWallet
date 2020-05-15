@@ -41,7 +41,6 @@ namespace WebWallet.API.v1.Controllers
         /// Create transfer object and return URL for confirmation.
         /// </summary>
         /// <param name="transferInfo"></param>
-        /// <param name="currencyRateService"></param>
         /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> CreateTransfer(CreateTransfer transferInfo)
@@ -85,7 +84,7 @@ namespace WebWallet.API.v1.Controllers
                 FromCurrencyId = transferInfo.From,
                 ToCurrencyId = transferInfo.To,
                 UserWalletId = transferInfo.WalletId.ToString(),
-                ActualCurrencyRate = rate.HasValue ? (double)rate.Value : 0,
+                ActualCurrencyRate = (double?)rate,
                 Amount = transferInfo.Amount,
             };
             _repository.AddEntity(transfer);
@@ -102,12 +101,12 @@ namespace WebWallet.API.v1.Controllers
             await _repository.SaveAsync();
             return Created($"{Url.RouteUrl(ApiConstants.TransferRoute)}/{transfer.Id}", _mapper.Map<TransferInfo>(transfer));
         }
+
         /// <summary>
-        /// 
+        /// Confirm transfer.
         /// </summary>
         /// <param name="id"></param>
         /// <param name="transferConfirmation"></param>
-        /// <param name="currencyRateService"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
         public async Task<IActionResult> ConfirmTransfer(string id, TransferConfirmation transferConfirmation)

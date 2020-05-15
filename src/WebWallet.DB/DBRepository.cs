@@ -21,10 +21,7 @@ namespace WebWallet.DB
             _context = context;
         }
         /// <inheritdoc/>
-        public bool AddEntity<T>(T entity)
-        {
-            throw new NotImplementedException();
-        }
+        public bool AddEntity<T>(T entity) => _context.Add(entity) != null;
         /// <inheritdoc/>
         public void Dispose() => _context.Dispose();
         /// <inheritdoc/>
