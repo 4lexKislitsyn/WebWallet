@@ -13,6 +13,7 @@ namespace WebWallet.DB
         private IDictionary<string, ICollection<CurrencyBalance>> _balances = new Dictionary<string, ICollection<CurrencyBalance>>();
         private ICollection<MoneyTransfer> _transfers = new List<MoneyTransfer>();
         private bool _hasSaveChangesErorr = false;
+        private ICollection<string> _errors = new List<string>();
 
         /// <inheritdoc/>
         public bool AddEntity<T>(T entity)
@@ -24,14 +25,7 @@ namespace WebWallet.DB
                         _transfers.Add(transfer);
                         if (!_balances.TryGetValue(transfer.UserWalletId ?? string.Empty, out var balances))
                         {
-                            _hasSaveChangesErorr = true;
-                        }
-                        else
-                        {
-                            if (!string.IsNullOrWhiteSpace(transfer.FromCurrencyId) && balances.Any(x => x.Currency == transfer.FromCurrencyId))
-                            {
-                                _hasSaveChangesErorr = true;
-                            }
+                            _errors.Add($"Unknown Wallet with id {transfer.UserWalletId}.");
                         }
                     }
                     break;

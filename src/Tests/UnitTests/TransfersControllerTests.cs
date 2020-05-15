@@ -40,7 +40,7 @@ namespace UnitTests
         }
 
         [SetUp]
-        public void CreateController() => InitTest();
+        public void CreateController() => InitController();
         [TearDown]
         public void ClearTransferCollection() => _transferWithoutId.Clear();
         /// <summary>
@@ -52,7 +52,6 @@ namespace UnitTests
         public async Task BalanceOverflow()
         {
             var repo = new Mock<IWebWalletRepository>();
-            InitTest(repo.Object);
 
             var walletGuid = _generator.NextGuid().ToString();
 
@@ -77,7 +76,8 @@ namespace UnitTests
 
             var confirmation = new TransferConfirmation { WalletId = walletGuid };
 
-            var result = await _transfersController.ConfirmTransfer(_emptyGuid, confirmation, rateService);
+            InitController(repo.Object, rateService: rateService);
+            var result = await _transfersController.ConfirmTransfer(_emptyGuid, confirmation);
             result.IsResult<OkResult>(HttpStatusCode.OK);
             Assert.Positive(currencyBalance.Balance);
             Assert.AreNotEqual(double.PositiveInfinity, currencyBalance.Balance);
@@ -91,7 +91,6 @@ namespace UnitTests
         public async Task CreateTransfer([Values] TransferType type)
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            InitTest(repo.Object);
 
             var transfer = CreateTransferInfo(type);
 
@@ -123,7 +122,8 @@ namespace UnitTests
                 .Returns(true);
             AddCurrency(repo, transfer);
 
-            var result = await _transfersController.CreateTransfer(transfer, rateServiceMoq.Object);
+            InitController(repo.Object, rateService: rateServiceMoq.Object);
+            var result = await _transfersController.CreateTransfer(transfer);
             var content = result.IsCreatedWithContent<TransferInfo>(locationEndsWith: moneyTransfer.Id);
             Assert.AreEqual(moneyTransfer.Id, content.Id);
             Assert.IsFalse(_transferWithoutId.Any(), "Save changes before transfer created.");
@@ -143,10 +143,10 @@ namespace UnitTests
             repo.Setup(x => x.DoesWalletExist(It.IsAny<string>()))
                 .Returns(false);
 
-            InitTest(repo.Object);
-
             var transferInfo = CreateTransferInfo(type, 1);
-            var result = await _transfersController.CreateTransfer(transferInfo, Mock.Of<ICurrencyRateService>(MockBehavior.Strict));
+
+            InitController(repo.Object, rateService: Mock.Of<ICurrencyRateService>(MockBehavior.Strict));
+            var result = await _transfersController.CreateTransfer(transferInfo);
             result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
         }
 
@@ -162,7 +162,6 @@ namespace UnitTests
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Loose);
             AddIdBehaviour(repo);
-            InitTest(repo.Object);
 
             var transferInfo = CreateTransferInfo(type);
             repo.Setup(x => x.DoesWalletContainsCurrency(It.IsNotNull<string>(), transferInfo.From))
@@ -172,7 +171,8 @@ namespace UnitTests
             rateService.Setup(x => x.GetCurrencyRate(It.IsNotNull<string>(), It.IsNotNull<string>()))
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
-            var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
+            InitController(repo.Object, rateService: rateService.Object);
+            var result = await _transfersController.CreateTransfer(transferInfo);
             result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
         }
         /// <summary>
@@ -188,7 +188,6 @@ namespace UnitTests
             var transferInfo = CreateTransferInfo(type, 1);
 
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            InitTest(repo.Object);
 
             AddIdBehaviour(repo);
             AddWallets(repo, transferInfo.WalletId.ToString());
@@ -208,7 +207,8 @@ namespace UnitTests
             rateService.Setup(x => x.GetCurrencyRate(It.IsNotNull<string>(), It.IsNotNull<string>()))
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
-            var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
+            InitController(repo.Object, rateService: rateService.Object);
+            var result = await _transfersController.CreateTransfer(transferInfo);
             result.IsResult<ObjectResult>(HttpStatusCode.PaymentRequired);
             repo.Verify();
         }
@@ -220,7 +220,6 @@ namespace UnitTests
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
             AddIdBehaviour(repo);
-            InitTest(repo.Object);
 
             var transferInfo = CreateTransferInfo(type, 1);
 
@@ -244,7 +243,8 @@ namespace UnitTests
             rateService.Setup(x => x.GetCurrencyRate(It.IsNotNull<string>(), It.IsNotNull<string>()))
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
-            var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
+            InitController(repo.Object, rateService: rateService.Object);
+            var result = await _transfersController.CreateTransfer(transferInfo);
             result.IsCreatedWithContent<TransferInfo>(x => x.Id);
             repo.Verify();
         }
@@ -260,10 +260,10 @@ namespace UnitTests
             var transferInfo = CreateTransferInfo(TransferType.Transfer);
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
             AddWallets(repo, transferInfo.WalletId.ToString());
-            InitTest(repo.Object);
             AddCurrency(repo, transferInfo);
 
-            var result = await _transfersController.CreateTransfer(transferInfo, Mock.Of<ICurrencyRateService>(MockBehavior.Loose));
+            InitController(repo.Object, rateService: Mock.Of<ICurrencyRateService>(MockBehavior.Loose));
+            var result = await _transfersController.CreateTransfer(transferInfo);
             result.IsResult<BadRequestObjectResult>(HttpStatusCode.BadRequest);
         }
         /// <summary>
@@ -276,16 +276,17 @@ namespace UnitTests
             var transferInfo = CreateTransferInfo(TransferType.Transfer);
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
             AddWallets(repo, transferInfo.WalletId.ToString());
-            InitTest(repo.Object);
             AddCurrency(repo, transferInfo);
 
             var rateService = new Mock<ICurrencyRateService>();
             rateService.Setup(x => x.GetCurrencyRate(It.IsAny<string>(), It.IsAny<string>()))
                 .Throws<Exception>();
             IActionResult result = null;
+
+            InitController(repo.Object, rateService: rateService.Object);
             Assert.DoesNotThrowAsync(async () =>
             {
-                result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
+                result = await _transfersController.CreateTransfer(transferInfo);
             }, "Action shouldn't throw exception if rate service is unavailable.");
             var objectResult = result.IsResult<ObjectResult>(HttpStatusCode.ServiceUnavailable);
             objectResult.HasContent<ErrorModel>();
@@ -299,7 +300,6 @@ namespace UnitTests
         public async Task DeleteAnotherWalletTransfer()
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            InitTest(repo.Object);
             repo.Setup(x => x.FindTransfer(It.IsNotNull<string>()))
                 .Returns<string>(id => new MoneyTransfer
                 {
@@ -307,6 +307,7 @@ namespace UnitTests
                     Id = id
                 });
 
+            InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), new DeleteTransferRequest
             {
                 WalletId = _emptyGuid
@@ -322,7 +323,6 @@ namespace UnitTests
         public async Task DeleteNonexistentTransfer()
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            InitTest(repo.Object);
             repo.Setup(x => x.FindTransfer(It.IsNotNull<string>()))
                 .Returns((MoneyTransfer)null);
 
@@ -330,6 +330,7 @@ namespace UnitTests
             {
                 WalletId = _emptyGuid
             };
+            InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
             result.IsResult<NotFoundResult>(HttpStatusCode.NotFound);
         }
@@ -342,7 +343,6 @@ namespace UnitTests
         public async Task DeleteCompletedTransfer()
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            InitTest(repo.Object);
             repo.Setup(x => x.FindTransfer(It.IsNotNull<string>()))
                 .Returns<string>(id => new MoneyTransfer
                 {
@@ -350,6 +350,7 @@ namespace UnitTests
                     State = TransferState.Completed
                 });
 
+            InitController(repo.Object);
             var request = new DeleteTransferRequest
             {
                 WalletId = _emptyGuid
@@ -366,7 +367,6 @@ namespace UnitTests
         public async Task DeleteRemovedTransfer()
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            InitTest(repo.Object);
 
             var walletId = _emptyGuid;
 
@@ -382,6 +382,7 @@ namespace UnitTests
             {
                 WalletId = walletId
             };
+            InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
             result.IsResult<OkResult>(HttpStatusCode.OK);
         }
@@ -394,7 +395,6 @@ namespace UnitTests
         public async Task DeleteActiveTransfer()
         {
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            InitTest(repo.Object);
 
             var walletId = _emptyGuid;
 
@@ -422,6 +422,7 @@ namespace UnitTests
             {
                 WalletId = walletId
             };
+            InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(transferId, request);
             result.IsResult<OkResult>(HttpStatusCode.OK);
             Assert.AreEqual(TransferState.Deleted, lastSavedState);
@@ -448,9 +449,9 @@ namespace UnitTests
          *  + Delete deleted earlier transfer - 200; 
          */
 
-        private void InitTest(IWebWalletRepository repository = null, IUrlHelper urlHelper = null)
+        private void InitController(IWebWalletRepository repository = null, IUrlHelper urlHelper = null, ICurrencyRateService rateService = null)
         {
-            _transfersController = new TransferController(repository ?? new InMemoryRepository(), _mapper)
+            _transfersController = new TransferController(repository ?? new InMemoryRepository(), _mapper, rateService ?? Mock.Of<ICurrencyRateService>())
             {
                 Url = urlHelper ?? Mock.Of<IUrlHelper>()
             };

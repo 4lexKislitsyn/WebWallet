@@ -21,6 +21,7 @@ using Microsoft.Extensions.PlatformAbstractions;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using WebWallet.API.ExternalAPI;
 using WebWallet.API.ExternalAPI.Interfaces;
+using WebWallet.API.ModelValidation;
 using WebWallet.DB;
 
 namespace WebWallet.API
@@ -84,6 +85,14 @@ namespace WebWallet.API
             services.AddAutoMapper(typeof(AutomapperProfiles.EntityToModelProfile), typeof(AutomapperProfiles.ModelToEntityProfile));
 
             services.Configure<ECBCurrencyConfiguration>(Configuration.GetSection(nameof(ECBCurrencyRateService)));
+
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = (context) =>
+                {
+                    return new ModelValidationFailedResult(context.ModelState);
+                };
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

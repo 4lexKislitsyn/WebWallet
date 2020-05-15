@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace WebWallet.API.Helpers.ModelValidation
+namespace WebWallet.API.ModelValidation
 {
     internal class ModelValidationFailedResult : ObjectResult
     {

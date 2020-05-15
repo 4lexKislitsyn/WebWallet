@@ -23,6 +23,7 @@ namespace WebWallet.API.v1.Models
         /// Amount of money to transfer.
         /// </summary>
         [Required]
+        [Range(double.Epsilon, double.MaxValue, ErrorMessage = "The field " + nameof(Amount) + " must be greater then 0 and lower then 1,7976931348623157E+308.")]
         public double Amount { get; set; }
         /// <summary>
         /// Wallet identifier.

@@ -20,20 +20,22 @@ namespace WebWallet.API.v1.Controllers
     [Route("api/[controller]", Name = ApiConstants.TransferRoute)]
     [ApiController]
     [ApiVersion(ApiConstants.V1)]
-    [Helpers.ModelValidation.ValidateModelAtrribute]
     public class TransferController : ControllerBase
     {
         private readonly IWebWalletRepository _repository;
         private readonly IMapper _mapper;
+        private readonly ICurrencyRateService _rateService;
 
         /// <summary>
         /// Create an instance of <see cref="TransferController"/>.
         /// </summary>
         /// <param name="repository"></param>
-        public TransferController(IWebWalletRepository repository, IMapper mapper)
+        /// <param name="mapper"></param>
+        public TransferController(IWebWalletRepository repository, IMapper mapper, ICurrencyRateService rateService)
         {
             _repository = repository;
             _mapper = mapper;
+            _rateService = rateService;
         }
         /// <summary>
         /// Create transfer object and return URL for confirmation.
@@ -42,12 +44,11 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="currencyRateService"></param>
         /// <returns></returns>
         [HttpPost]
-        [Helpers.ModelValidation.ValidateModelAtrribute]
-        public async Task<IActionResult> CreateTransfer(CreateTransfer transferInfo, [FromServices] ICurrencyRateService currencyRateService)
+        public async Task<IActionResult> CreateTransfer(CreateTransfer transferInfo)
         {
             if (!_repository.DoesWalletExist(transferInfo.WalletId.ToString()))
             {
-                return NotFound($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property.");
+                return NotFound(new ErrorModel($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property."));
             }
 
             if (transferInfo.From.IsDefined())
@@ -55,11 +56,11 @@ namespace WebWallet.API.v1.Controllers
                 var currencyBalance = _repository.FindCurrency(transferInfo.WalletId.ToString(), transferInfo.From);
                 if (currencyBalance == null)
                 {
-                    return NotFound($"You don't have \"{transferInfo.From}\" balance.");
+                    return NotFound(new ErrorModel($"You don't have \"{transferInfo.From}\" balance."));
                 }
                 if (currencyBalance.Balance < transferInfo.Amount)
                 {
-                    return StatusCode((int)HttpStatusCode.PaymentRequired, $"You don't have enough money on \"{transferInfo.From}\" balance.");
+                    return StatusCode((int)HttpStatusCode.PaymentRequired, new ErrorModel($"You don't have enough money on \"{transferInfo.From}\" balance."));
                 }
             }
 
@@ -67,18 +68,16 @@ namespace WebWallet.API.v1.Controllers
             decimal? rate = null;
             if (isCurrencyTransfer)
             {
-                try
+                var (result, rateValue) = await TryGetRate(transferInfo.From, transferInfo.To);
+                if (result != null)
                 {
-                    rate = await currencyRateService.GetCurrencyRate(transferInfo.From, transferInfo.To);
+                    return result;
                 }
-                catch (Exception)
-                {
-                    return StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorModel("Currency rate temporary unavailable. Please, try again later."));
-                }
+                rate = rateValue;
             }
             if (isCurrencyTransfer && !rate.HasValue)
             {
-                return BadRequest("Sorry. Cannot transfer this currency.");
+                return BadRequest(new ErrorModel("Sorry. Cannot transfer this currency."));
             }
             //TODO: add Automapper.
             var transfer = new MoneyTransfer()
@@ -111,13 +110,13 @@ namespace WebWallet.API.v1.Controllers
         /// <param name="currencyRateService"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> ConfirmTransfer(string id, TransferConfirmation transferConfirmation, [FromServices] ICurrencyRateService currencyRateService)
+        public async Task<IActionResult> ConfirmTransfer(string id, TransferConfirmation transferConfirmation)
         {
             var transfer = _repository.FindTransferWithCurrencies(id.ToString());
 
             if (transfer == null || transfer.State != TransferState.Active)
             {
-                return NotFound();
+                return NotFound(new ErrorModel("Suitable transfer to complete was not found."));
             }
 
             if (transfer.FromCurrency.IsNull() && transfer.ToCurrency.IsNull())
@@ -137,10 +136,14 @@ namespace WebWallet.API.v1.Controllers
 
             if (!transfer.FromCurrency.IsNull() && !transfer.ToCurrency.IsNull())
             {
-                var rate = await currencyRateService.GetCurrencyRate(transfer.FromCurrencyId, transfer.ToCurrencyId);
+                var (result, rate) = await TryGetRate(transfer.FromCurrencyId, transfer.ToCurrencyId);
+                if (result != null)
+                {
+                    return result;
+                }
                 if (!rate.HasValue)
                 {
-                    return Problem("Sorry, cannot transfer this currency anymore.");
+                    return StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorModel("Sorry, cannot transfer this currency anymore."));
                 }
                 transfer.FromCurrency.Balance -= transfer.Amount;
                 transfer.ToCurrency.Balance = (double)((decimal)transfer.Amount * rate.Value);
@@ -187,6 +190,21 @@ namespace WebWallet.API.v1.Controllers
             }
 
             return Ok();
+        }
+
+        private async Task<(ObjectResult result, decimal? rateValue)> TryGetRate(string fromCurrency, string toCurrency)
+        {
+            try
+            {
+                var rate = await _rateService.GetCurrencyRate(fromCurrency, toCurrency);
+                return (null, rate);
+            }
+            catch (Exception ex)
+            {
+                //TODO: log error
+                var unavailableResult = StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorModel("Currency rate temporary unavailable. Please, try again later."));
+                return (unavailableResult, null);
+            }
         }
     }
 }
