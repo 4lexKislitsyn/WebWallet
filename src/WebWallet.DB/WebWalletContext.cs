@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using WebWallet.DB.Entities;
+using System.Linq;
 
 namespace WebWallet.DB
 {
@@ -13,9 +15,11 @@ namespace WebWallet.DB
         /// Create an instance of <see cref="WebWalletContext"/>
         /// </summary>
         /// <param name="options">Параметры инициализации</param>
-        public WebWalletContext(DbContextOptions<WebWalletContext> options) : base(options)
+        public WebWalletContext(DbContextOptions<WebWalletContext> options, ILogger<WebWalletContext> logger) : base(options)
         {
+            logger?.LogInformation($"Starting database migration (pending = {Database.GetPendingMigrations().Count()}).");
             Database.Migrate();
+            logger?.LogInformation("Database migration ends successful.");
         }
 
         public DbSet<CurrencyBalance> Currencies { get; set; }

@@ -18,7 +18,7 @@ namespace WebWallet.DB
                 .Build();
             var builder = new DbContextOptionsBuilder<WebWalletContext>()
                 .UseMySql(configuration.GetConnectionString(DBExtensions.DatabaseConenctionName));
-            return new WebWalletContext(builder.Options);
+            return new WebWalletContext(builder.Options, null);
         }
     }
 }

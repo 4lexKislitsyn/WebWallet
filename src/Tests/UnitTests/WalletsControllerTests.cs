@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
@@ -39,7 +40,7 @@ namespace UnitTests
                 cfg.AddProfile<ModelToEntityProfile>();
             }).CreateMapper();
 
-            _walletController = new WalletController(_repository, mapper);
+            _walletController = new WalletController(_repository, mapper, Mock.Of<ILogger<WalletController>>());
         }
         /// <summary>
         /// Check create wallet method.

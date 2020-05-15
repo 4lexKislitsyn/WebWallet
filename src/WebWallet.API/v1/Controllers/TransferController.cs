@@ -7,6 +7,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Logging;
 using WebWallet.API.ExternalAPI.Interfaces;
 using WebWallet.API.v1.DTO;
 using WebWallet.API.v1.Models;
@@ -26,17 +27,20 @@ namespace WebWallet.API.v1.Controllers
         private readonly IWebWalletRepository _repository;
         private readonly IMapper _mapper;
         private readonly ICurrencyRateService _rateService;
+        private readonly ILogger<TransferController> _logger;
 
         /// <summary>
         /// Create an instance of <see cref="TransferController"/>.
         /// </summary>
         /// <param name="repository"></param>
         /// <param name="mapper"></param>
-        public TransferController(IWebWalletRepository repository, IMapper mapper, ICurrencyRateService rateService)
+        /// <param name="rateService"></param>
+        public TransferController(IWebWalletRepository repository, IMapper mapper, ICurrencyRateService rateService, ILogger<TransferController> logger)
         {
             _repository = repository;
             _mapper = mapper;
             _rateService = rateService;
+            _logger = logger;
         }
         /// <summary>
         /// Create transfer object and return URL for confirmation.
@@ -48,6 +52,7 @@ namespace WebWallet.API.v1.Controllers
         {
             if (!_repository.DoesWalletExist(transferInfo.WalletId.ToString()))
             {
+                _logger.LogInformation("Wallet with id {WalletId} was not found.", transferInfo.WalletId);
                 return NotFound(new ErrorModel($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property."));
             }
 
@@ -56,10 +61,12 @@ namespace WebWallet.API.v1.Controllers
                 var currencyBalance = _repository.FindCurrency(transferInfo.WalletId.ToString(), transferInfo.From);
                 if (currencyBalance == null)
                 {
+                    _logger.LogInformation("Wallet with id {WalletId} doesn't have currency '{From}'", transferInfo.WalletId, transferInfo.From);
                     return NotFound(new ErrorModel($"You don't have \"{transferInfo.From}\" balance."));
                 }
                 if (currencyBalance.Balance < transferInfo.Amount)
                 {
+                    _logger.LogInformation("Trying to create transfer for wallet (WalletId) and currency '{From}' (balance={Balance}, transfer amount={Amount}).", transferInfo.WalletId, transferInfo.From, transferInfo.Amount, currencyBalance.Balance);
                     return StatusCode((int)HttpStatusCode.PaymentRequired, new ErrorModel($"You don't have enough money on \"{transferInfo.From}\" balance."));
                 }
             }
@@ -79,15 +86,9 @@ namespace WebWallet.API.v1.Controllers
             {
                 return BadRequest(new ErrorModel("Sorry. Cannot transfer this currency."));
             }
-            //TODO: add Automapper.
-            var transfer = new MoneyTransfer()
-            {
-                FromCurrencyId = transferInfo.From,
-                ToCurrencyId = transferInfo.To,
-                WalletId = transferInfo.WalletId.ToString(),
-                ActualCurrencyRate = (double?)rate,
-                Amount = transferInfo.Amount,
-            };
+
+            var transfer = _mapper.Map<MoneyTransfer>(transferInfo);
+            transfer.ActualCurrencyRate = (double?)rate;
             _repository.AddEntity(transfer);
 
             if (transfer.ToCurrencyId.IsDefined() && !_repository.DoesWalletContainsCurrency(transfer.WalletId, transfer.ToCurrencyId))
@@ -113,10 +114,12 @@ namespace WebWallet.API.v1.Controllers
             var transfer = _repository.FindTransfer(id);
             if (transfer == null)
             {
+                _logger.LogInformation("Transfer with id {id} in wallet {WalletId} was not found.", actionRequest.WalletId);
                 return NotFound(new ErrorModel("Transfer was not found."));
             }
             if (transfer.WalletId != actionRequest.WalletId)
             {
+                _logger.LogInformation("Try to get information about transfer {id} was prevented (passed wallet id {WalletId}).", actionRequest.WalletId);
                 return Forbid();
             }
             return Ok(_mapper.Map<TransferInfo>(transfer));
@@ -193,6 +196,10 @@ namespace WebWallet.API.v1.Controllers
 
             if (transfer == null || transfer.State == TransferState.Completed)
             {
+                if (transfer != null)
+                {
+                    _logger.LogWarning("Trying to delete {State} transfer.", transfer.State);
+                }
                 return NotFound(new ErrorModel("Suitable transfer to delete was not found. You can delete only active transfers."));
             }
 
@@ -215,11 +222,15 @@ namespace WebWallet.API.v1.Controllers
             try
             {
                 var rate = await _rateService.GetCurrencyRate(fromCurrency, toCurrency);
+                if (!rate.HasValue)
+                {
+                    _logger.LogWarning("Cannot get currency rate ({fromCurrency} -> {toCurrency}).", fromCurrency, toCurrency);
+                }
                 return (null, rate);
             }
             catch (Exception ex)
             {
-                //TODO: log error
+                _logger.LogError(ex, "Cannot get response from rate service ({fromCurrency} -> {toCurrency}).", fromCurrency, toCurrency);
                 var unavailableResult = StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorModel("Currency rate temporary unavailable. Please, try again later."));
                 return (unavailableResult, null);
             }

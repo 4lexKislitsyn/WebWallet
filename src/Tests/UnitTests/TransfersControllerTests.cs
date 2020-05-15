@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
@@ -438,29 +439,17 @@ namespace UnitTests
         }
         /*
          *  TODO:
-         *  + Create transfer from/to - 200;
-         *  + Create transfer from - 200;
-         *  + Create transfer to - 200;
-         *  + Create transfer nonexistent wallet - 404/400;
-         *  + Create transfer from nonexistent currency balance - 404/400;
-         *  + Create transfer from not enough balance - 402;
-         *  + Create transfer to nonexistent currency balance - 201 balance should be created;
-         *  + Create transfer to unknown currency - 400;
          *  - Confirm transfer to nonexistent currency balance - 500 or create balance;
          *  - Confirm deleted transfer - 404;
          *  - Confirm completed transfer - 200;
          *  - Confirm active transfer - 200;
          *  - Confirm transfer when amount of transfer grater than balance - 402;
          *  - Confirm transfer belongs to another wallet - 403;
-         *  + Delete transfer belongs to another wallet - 403;
-         *  + Delete nonexistent transfer - 404;
-         *  + Delete completed transfer - 404;
-         *  + Delete deleted earlier transfer - 200; 
          */
 
         private void InitController(IWebWalletRepository repository = null, IUrlHelper urlHelper = null, ICurrencyRateService rateService = null)
         {
-            _transfersController = new TransferController(repository ?? new InMemoryRepository(), _mapper, rateService ?? Mock.Of<ICurrencyRateService>())
+            _transfersController = new TransferController(repository ?? new InMemoryRepository(), _mapper, rateService ?? Mock.Of<ICurrencyRateService>(), Mock.Of<ILogger<TransferController>>())
             {
                 Url = urlHelper ?? Mock.Of<IUrlHelper>()
             };

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using WebWallet.API.v1.DTO;
 using WebWallet.DB;
 using WebWallet.DB.Entities;
@@ -22,16 +23,19 @@ namespace WebWallet.API.v1.Controllers
     {
         private readonly IWebWalletRepository _repository;
         private readonly IMapper _mapper;
+        private readonly ILogger<WalletController> _logger;
 
         /// <summary>
         /// Create an instance of <see cref="WalletController"/>.
         /// </summary>
         /// <param name="repository"></param>
         /// <param name="mapper"></param>
-        public WalletController(IWebWalletRepository repository, IMapper mapper)
+        /// <param name="logger"></param>
+        public WalletController(IWebWalletRepository repository, IMapper mapper, ILogger<WalletController> logger)
         {
             _repository = repository;
             _mapper = mapper;
+            _logger = logger;
         }
         /// <summary>
         /// Create new wallet/user.
@@ -41,14 +45,17 @@ namespace WebWallet.API.v1.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateWallet()
         {
+            _logger.LogTrace("Got create wallet request.");
             var wallet = new UserWallet();
             if (!_repository.AddEntity(wallet))
             {
+                _logger.LogCritical("Cannot add wallet entity to repository.");
                 return Problem();
             }
             else
             {
                 await _repository.SaveAsync();
+                _logger.LogInformation("New wallet was created (Id).", wallet.Id);
             }
             return Created($"{Url.RouteUrl(ApiConstants.WalletRoute)}/{wallet.Id}", _mapper.Map<WalletInfo>(wallet));
         }
