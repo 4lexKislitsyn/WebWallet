@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
@@ -8,8 +9,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using WebWallet.API.AutomapperProfiles;
 using WebWallet.API.ExternalAPI.Interfaces;
 using WebWallet.API.v1.Controllers;
+using WebWallet.API.v1.DTO;
 using WebWallet.API.v1.Models;
 using WebWallet.DB;
 using WebWallet.DB.Entities;
@@ -22,9 +25,19 @@ namespace UnitTests
     {
         private readonly string _emptyGuid = Guid.Empty.ToString();
         private readonly Randomizer _generator = new Randomizer(DateTime.UtcNow.Minute);
+        private readonly IMapper _mapper;
         private TransferController _transfersController;
 
         private ICollection<MoneyTransfer> _transferWithoutId = new List<MoneyTransfer>();
+
+        public TransfersControllerTests()
+        {
+            _mapper = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<EntityToModelProfile>();
+                cfg.AddProfile<ModelToEntityProfile>();
+            }).CreateMapper();
+        }
 
         [SetUp]
         public void CreateController() => InitTest();
@@ -111,7 +124,7 @@ namespace UnitTests
             AddCurrency(repo, transfer);
 
             var result = await _transfersController.CreateTransfer(transfer, rateServiceMoq.Object);
-            var content = result.IsCreatedWithContent<MoneyTransfer>(locationEndsWith: moneyTransfer.Id);
+            var content = result.IsCreatedWithContent<TransferInfo>(locationEndsWith: moneyTransfer.Id);
             Assert.AreEqual(moneyTransfer.Id, content.Id);
             Assert.IsFalse(_transferWithoutId.Any(), "Save changes before transfer created.");
         }
@@ -232,7 +245,7 @@ namespace UnitTests
                 .Returns(Task.FromResult<decimal?>(_generator.NextDecimal(1, 100)));
 
             var result = await _transfersController.CreateTransfer(transferInfo, rateService.Object);
-            result.IsCreatedWithContent((Func<MoneyTransfer, string>)null);
+            result.IsCreatedWithContent<TransferInfo>(x => x.Id);
             repo.Verify();
         }
 
@@ -437,7 +450,7 @@ namespace UnitTests
 
         private void InitTest(IWebWalletRepository repository = null, IUrlHelper urlHelper = null)
         {
-            _transfersController = new TransferController(repository ?? new InMemoryRepository())
+            _transfersController = new TransferController(repository ?? new InMemoryRepository(), _mapper)
             {
                 Url = urlHelper ?? Mock.Of<IUrlHelper>()
             };
