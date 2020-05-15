@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using Microsoft.CodeAnalysis.Options;
+using Microsoft.Extensions.Options;
+using Moq;
+using NUnit.Framework;
 using NUnit.Framework.Internal;
 using System;
 using System.Collections.Generic;
@@ -18,8 +21,22 @@ namespace UnitTests
     public class ECBCurrencyRateServiceTests
     {
         public static readonly string[] Currencies = GetCurrencies().ToArray();
-
         public static readonly Randomizer Generator = new Randomizer(DateTime.UtcNow.Minute);
+        private static readonly ECBCurrencyConfiguration _configuration = new ECBCurrencyConfiguration
+        {
+            BaseUrl = "https://www.ecb.europa.eu/",
+            RatePath = "stats/eurofxref/eurofxref-daily.xml",
+        };
+
+        private ECBCurrencyRateService _service;
+        private Mock<IOptions<ECBCurrencyConfiguration>> _options;
+
+        public ECBCurrencyRateServiceTests()
+        {
+            _options = new Mock<IOptions<ECBCurrencyConfiguration>>();
+            _options.SetupGet(x => x.Value)
+                .Returns(_configuration);
+        }
         /// <summary>
         /// Get random elements from <see cref="Currencies"/>.
         /// </summary>
@@ -32,6 +49,11 @@ namespace UnitTests
                 return Currencies.Skip(startIndex).Take(size);
             }
         }
+        [SetUp]
+        public void CreateService()
+        {
+            _service = new ECBCurrencyRateService(_options.Object);
+        }
 
         /// <summary>
         /// Check that rate will be calculated for known currencies.
@@ -43,8 +65,7 @@ namespace UnitTests
         public async Task AllCurrenciesRateCalculated([ValueSource(nameof(RandomCurrencies))] string from,
             [ValueSource(nameof(RandomCurrencies))] string to)
         {
-            var service = new ECBCurrencyRateService();
-            var rate = await service.GetCurrencyRate(from, to);
+            var rate = await _service.GetCurrencyRate(from, to);
 
             Assert.IsTrue(rate.HasValue);
             Assert.IsTrue(rate.Value > 0);
@@ -58,8 +79,7 @@ namespace UnitTests
         [Test]
         public async Task NullFromCurrencyIdentifier([ValueSource(nameof(RandomCurrencies))] string to)
         {
-            var service = new ECBCurrencyRateService();
-            var rate = await service.GetCurrencyRate(null, to);
+            var rate = await _service.GetCurrencyRate(null, to);
             Assert.IsFalse(rate.HasValue);
         }
         /// <summary>
@@ -70,8 +90,7 @@ namespace UnitTests
         [Test]
         public async Task NullToCurrencyIdentifier([ValueSource(nameof(RandomCurrencies))] string from)
         {
-            var service = new ECBCurrencyRateService();
-            var rate = await service.GetCurrencyRate(from, null);
+            var rate = await _service.GetCurrencyRate(from, null);
             Assert.IsFalse(rate.HasValue);
         }
         /// <summary>
@@ -82,10 +101,9 @@ namespace UnitTests
         [Test]
         public async Task UnknownCurrencyIdentifier([ValueSource(nameof(RandomCurrencies))] string knownCurrency)
         {
-            var service = new ECBCurrencyRateService();
-            var rate = await service.GetCurrencyRate(knownCurrency, Generator.GetString(5));
+            var rate = await _service.GetCurrencyRate(knownCurrency, Generator.GetString(5));
             Assert.IsFalse(rate.HasValue);
-            rate = await service.GetCurrencyRate(Generator.GetString(5), knownCurrency);
+            rate = await _service.GetCurrencyRate(Generator.GetString(5), knownCurrency);
             Assert.IsFalse(rate.HasValue);
         }
 

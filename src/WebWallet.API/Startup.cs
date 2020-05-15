@@ -82,6 +82,8 @@ namespace WebWallet.API
             services.AddTransient<ICurrencyRateService, ECBCurrencyRateService>();
 
             services.AddAutoMapper(typeof(AutomapperProfiles.EntityToModelProfile), typeof(AutomapperProfiles.ModelToEntityProfile));
+
+            services.Configure<ECBCurrencyConfiguration>(Configuration.GetSection(nameof(ECBCurrencyRateService)));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

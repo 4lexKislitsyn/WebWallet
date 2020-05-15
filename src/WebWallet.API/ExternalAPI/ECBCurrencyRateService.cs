@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -15,6 +16,16 @@ namespace WebWallet.API.ExternalAPI
     /// </summary>
     public class ECBCurrencyRateService : ICurrencyRateService
     {
+        private readonly ECBCurrencyConfiguration _configuration;
+
+        /// <summary>
+        /// Create an instance of <see cref="ECBCurrencyRateService"/>.
+        /// </summary>
+        /// <param name="options"></param>
+        public ECBCurrencyRateService(IOptions<ECBCurrencyConfiguration> options)
+        {
+            _configuration = options.Value;
+        }
         /// <summary>
         /// Name of currency identifier attribute.
         /// </summary>
@@ -28,10 +39,10 @@ namespace WebWallet.API.ExternalAPI
             }
             using var client = new HttpClient()
             {
-                BaseAddress = new Uri("https://www.ecb.europa.eu/")
+                BaseAddress = new Uri(_configuration.BaseUrl)
             };
 
-            var response = await client.GetAsync("stats/eurofxref/eurofxref-daily.xml");
+            var response = await client.GetAsync(_configuration.RatePath);
 
             response.EnsureSuccessStatusCode();
 
