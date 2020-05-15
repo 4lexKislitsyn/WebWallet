@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using WebWallet.API.ExternalAPI.Interfaces;
 using WebWallet.API.v1.DTO;
 using WebWallet.API.v1.Models;
@@ -103,13 +104,31 @@ namespace WebWallet.API.v1.Controllers
         }
 
         /// <summary>
+        /// Get info about transfer.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("{id}")]
+        public IActionResult GetTransfer(string id, [FromQuery] TransferActionRequest actionRequest)
+        {
+            var transfer = _repository.FindTransfer(id);
+            if (transfer == null)
+            {
+                return NotFound(new ModelError("Transfer was not found."));
+            }
+            if (transfer.UserWalletId != actionRequest.WalletId)
+            {
+                return Forbid();
+            }
+            return Ok(_mapper.Map<TransferInfo>(transfer));
+        }
+        /// <summary>
         /// Confirm transfer.
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="transferConfirmation"></param>
+        /// <param name="actionRequest"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> ConfirmTransfer(string id, TransferConfirmation transferConfirmation)
+        public async Task<IActionResult> ConfirmTransfer(string id, TransferActionRequest actionRequest)
         {
             var transfer = _repository.FindTransferWithCurrencies(id.ToString());
 
@@ -123,7 +142,7 @@ namespace WebWallet.API.v1.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorModel("Sorry, transfer is inconsistent. Please, contact technical support."));
             }
 
-            if (transfer.UserWalletId != transferConfirmation.WalletId.ToString())
+            if (transfer.UserWalletId != actionRequest.WalletId.ToString())
             {
                 return Forbid();
             }
@@ -165,19 +184,19 @@ namespace WebWallet.API.v1.Controllers
         /// Delete active transfer.
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="deleteTransfer"></param>
+        /// <param name="actionRequest"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTransfer(string id, DeleteTransferRequest deleteTransfer)
+        public async Task<IActionResult> DeleteTransfer(string id, TransferActionRequest actionRequest)
         {
             var transfer = _repository.FindTransfer(id.ToString());
 
             if (transfer == null || transfer.State == TransferState.Completed)
             {
-                return NotFound();
+                return NotFound(new ErrorModel("Suitable transfer to complete was not found. You can delete only active transfers."));
             }
 
-            if (transfer.UserWalletId != deleteTransfer.WalletId)
+            if (transfer.UserWalletId != actionRequest.WalletId)
             {
                 return Forbid();
             }

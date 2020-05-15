@@ -74,7 +74,7 @@ namespace UnitTests
 
             var rateService = Mock.Of<ICurrencyRateService>(MockBehavior.Strict);
 
-            var confirmation = new TransferConfirmation { WalletId = walletGuid };
+            var confirmation = new TransferActionRequest { WalletId = walletGuid };
 
             InitController(repo.Object, rateService: rateService);
             var result = await _transfersController.ConfirmTransfer(_emptyGuid, confirmation);
@@ -315,7 +315,7 @@ namespace UnitTests
                 });
 
             InitController(repo.Object);
-            var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), new DeleteTransferRequest
+            var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), new TransferActionRequest
             {
                 WalletId = _emptyGuid
             });
@@ -333,13 +333,14 @@ namespace UnitTests
             repo.Setup(x => x.FindTransfer(It.IsNotNull<string>()))
                 .Returns((MoneyTransfer)null);
 
-            var request = new DeleteTransferRequest
+            var request = new TransferActionRequest
             {
                 WalletId = _emptyGuid
             };
             InitController(repo.Object);
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
-            result.IsResult<NotFoundResult>(HttpStatusCode.NotFound);
+            var notFoundResult = result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
+            notFoundResult.HasContent<ErrorModel>();
         }
 
         /// <summary>
@@ -358,12 +359,13 @@ namespace UnitTests
                 });
 
             InitController(repo.Object);
-            var request = new DeleteTransferRequest
+            var request = new TransferActionRequest
             {
                 WalletId = _emptyGuid
             };
             var result = await _transfersController.DeleteTransfer(_generator.NextGuid().ToString(), request);
-            result.IsResult<NotFoundResult>(HttpStatusCode.NotFound);
+            var notFoundResult = result.IsResult<NotFoundObjectResult>(HttpStatusCode.NotFound);
+            notFoundResult.HasContent<ErrorModel>();
         }
 
         /// <summary>
@@ -385,7 +387,7 @@ namespace UnitTests
                     UserWalletId = walletId
                 });
 
-            var request = new DeleteTransferRequest
+            var request = new TransferActionRequest
             {
                 WalletId = walletId
             };
@@ -425,7 +427,7 @@ namespace UnitTests
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var request = new DeleteTransferRequest
+            var request = new TransferActionRequest
             {
                 WalletId = walletId
             };

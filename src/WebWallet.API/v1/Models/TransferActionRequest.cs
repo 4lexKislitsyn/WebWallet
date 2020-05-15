@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 namespace WebWallet.API.v1.Models
 {
     /// <summary>
-    /// Model of transfer confirmation.
+    /// Model for Delete/Put/Get requests.
     /// </summary>
-    public class TransferConfirmation
+    public class TransferActionRequest
     {
         /// <summary>
         /// Transfer wallet identifier.
