@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "web-wallet": "Server=localhost;database=web_wallet;user=local_guest;password=local_guest"
+  }
+}

@@ -21,6 +21,12 @@ namespace WebWallet.API
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                });
+                })
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                var isProduction = context.HostingEnvironment.IsProduction();
+                config.AddJsonFile(System.IO.Path.Combine(context.HostingEnvironment.ContentRootPath, "..", "WebWallet.DB", "Connections.json"), optional: isProduction, reloadOnChange: true);
+                config.AddJsonFile("Connections.json", optional: !isProduction);
+            });
     }
 }

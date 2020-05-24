@@ -14,7 +14,7 @@ namespace WebWallet.DB
         {
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile(Path.GetFullPath(@"../WebWallet.API/appsettings.json"), optional: false)
+                .AddJsonFile(Path.GetFullPath(@"Connections.json"), optional: false)
                 .Build();
             var builder = new DbContextOptionsBuilder<WebWalletContext>()
                 .UseMySql(configuration.GetConnectionString(DBExtensions.DatabaseConenctionName));
