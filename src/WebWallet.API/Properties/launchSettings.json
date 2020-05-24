@@ -23,13 +23,6 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Staging"
       }
-    },
-    "Docker": {
-      "commandName": "Docker",
-      "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/weatherforecast",
-      "publishAllPorts": true,
-      "useSSL": true
     }
   }
 }
