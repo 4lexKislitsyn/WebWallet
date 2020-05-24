@@ -23,6 +23,7 @@ namespace WebWallet.API.ExternalAPI
         /// Create an instance of <see cref="ECBCurrencyRateService"/>.
         /// </summary>
         /// <param name="options"></param>
+        /// <param name="httpClient"></param>
         public ECBCurrencyRateService(IOptions<ECBCurrencyConfiguration> options, HttpClient httpClient)
         {
             _configuration = options.Value;
