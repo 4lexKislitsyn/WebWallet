@@ -60,7 +60,7 @@ namespace WebWallet.API.v1.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTransfer(CreateTransfer transferInfo)
         {
-            if (!_repository.DoesWalletExist(transferInfo.WalletId.ToString()))
+            if (!_repository.DoesWalletExist(transferInfo.WalletId))
             {
                 _logger.LogInformation("Wallet with id {WalletId} was not found.", transferInfo.WalletId);
                 return NotFound(new ErrorModel($"Unknown wallet. Check {nameof(transferInfo.WalletId)} property."));
@@ -68,7 +68,7 @@ namespace WebWallet.API.v1.Controllers
 
             if (transferInfo.From.IsDefined())
             {
-                var currencyBalance = _repository.FindCurrency(transferInfo.WalletId.ToString(), transferInfo.From);
+                var currencyBalance = _repository.FindCurrency(transferInfo.WalletId, transferInfo.From);
                 if (currencyBalance == null)
                 {
                     _logger.LogInformation("Wallet with id {WalletId} doesn't have currency '{From}'", transferInfo.WalletId, transferInfo.From);
@@ -173,7 +173,7 @@ namespace WebWallet.API.v1.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorModel("Sorry, transfer is inconsistent. Please, contact technical support."));
             }
 
-            if (transfer.WalletId != actionRequest.WalletId.ToString())
+            if (transfer.WalletId != actionRequest.WalletId)
             {
                 return Forbid();
             }

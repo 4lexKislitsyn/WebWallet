@@ -198,7 +198,7 @@ namespace UnitTests
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
 
             AddIdBehaviour(repo);
-            AddWallets(repo, transferInfo.WalletId.ToString());
+            AddWallets(repo, transferInfo.WalletId);
 
             repo.Setup(x => x.DoesWalletContainsCurrency(It.IsNotNull<string>(), transferInfo.From))
                 .Returns(true);
@@ -231,10 +231,10 @@ namespace UnitTests
 
             var transferInfo = CreateTransferInfo(type, 1);
 
-            AddWallets(repo, transferInfo.WalletId.ToString());
+            AddWallets(repo, transferInfo.WalletId);
             AddCurrency(repo, transferInfo);
 
-            repo.Setup(x => x.DoesWalletContainsCurrency(transferInfo.WalletId.ToString(), transferInfo.To))
+            repo.Setup(x => x.DoesWalletContainsCurrency(transferInfo.WalletId, transferInfo.To))
                 .Returns(false);
 
             repo.Setup(x => x.AddEntity(It.IsNotNull<CurrencyBalance>()))
@@ -242,7 +242,7 @@ namespace UnitTests
                 {
                     Assert.AreEqual(0, currencyBalance.Balance);
                     Assert.AreEqual(transferInfo.To, currencyBalance.Currency);
-                    Assert.AreEqual(transferInfo.WalletId.ToString(), currencyBalance.WalletId);
+                    Assert.AreEqual(transferInfo.WalletId, currencyBalance.WalletId);
                 })
                 .Returns(true)
                 .Verifiable();
@@ -267,7 +267,7 @@ namespace UnitTests
         {
             var transferInfo = CreateTransferInfo(TransferType.Transfer);
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            AddWallets(repo, transferInfo.WalletId.ToString());
+            AddWallets(repo, transferInfo.WalletId);
             AddCurrency(repo, transferInfo);
 
             InitController(repo.Object, rateService: Mock.Of<ICurrencyRateService>(MockBehavior.Loose));
@@ -283,7 +283,7 @@ namespace UnitTests
         {
             var transferInfo = CreateTransferInfo(TransferType.Transfer);
             var repo = new Mock<IWebWalletRepository>(MockBehavior.Strict);
-            AddWallets(repo, transferInfo.WalletId.ToString());
+            AddWallets(repo, transferInfo.WalletId);
             AddCurrency(repo, transferInfo);
 
             var rateService = new Mock<ICurrencyRateService>();
@@ -500,7 +500,7 @@ namespace UnitTests
 
         private void AddCurrency(Mock<IWebWalletRepository> repo, CreateTransfer transfer)
         {
-            repo.Setup(x => x.FindCurrency(transfer.WalletId.ToString(), transfer.From))
+            repo.Setup(x => x.FindCurrency(transfer.WalletId, transfer.From))
                 .Returns<string, string>((wallet, currency) => new CurrencyBalance
                 {
                     WalletId = wallet,
