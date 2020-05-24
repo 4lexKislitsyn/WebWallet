@@ -17,14 +17,16 @@ namespace WebWallet.API.ExternalAPI
     public class ECBCurrencyRateService : ICurrencyRateService
     {
         private readonly ECBCurrencyConfiguration _configuration;
+        private readonly HttpClient _httpClient;
 
         /// <summary>
         /// Create an instance of <see cref="ECBCurrencyRateService"/>.
         /// </summary>
         /// <param name="options"></param>
-        public ECBCurrencyRateService(IOptions<ECBCurrencyConfiguration> options)
+        public ECBCurrencyRateService(IOptions<ECBCurrencyConfiguration> options, HttpClient httpClient)
         {
             _configuration = options.Value;
+            _httpClient = httpClient;
         }
         /// <summary>
         /// Name of currency identifier attribute.
@@ -37,12 +39,9 @@ namespace WebWallet.API.ExternalAPI
             {
                 return 1;
             }
-            using var client = new HttpClient()
-            {
-                BaseAddress = new Uri(_configuration.BaseUrl)
-            };
+            _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
 
-            var response = await client.GetAsync(_configuration.RatePath);
+            var response = await _httpClient.GetAsync(_configuration.RatePath);
 
             response.EnsureSuccessStatusCode();
 

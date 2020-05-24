@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -82,7 +83,15 @@ namespace WebWallet.API
 
             services.AddMvcCore().AddNewtonsoftJson();
 
-            services.AddTransient<ICurrencyRateService, ECBCurrencyRateService>();
+            services.AddHttpClient<ICurrencyRateService, ECBCurrencyRateService>()
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    return new SocketsHttpHandler()
+                    {
+                        PooledConnectionIdleTimeout = TimeSpan.FromSeconds(60),
+                        PooledConnectionLifetime = TimeSpan.FromSeconds(30),
+                    };
+                });
 
             services.AddAutoMapper(typeof(AutomapperProfiles.EntityToModelProfile), typeof(AutomapperProfiles.ModelToEntityProfile));
 
@@ -97,6 +106,7 @@ namespace WebWallet.API
             });
 
             services.AddDatabase(Configuration, HostEnvironment.IsDevelopment());
+
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
